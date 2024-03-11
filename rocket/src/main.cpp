@@ -129,14 +129,8 @@ void initDPS310(){
 // Initialize IMU
 void initIMU(){
 
-  Serial.println("Initializing IMU over I2C...");
-  accelgyro.initialize();
-  Serial.println("IMU I2C initialized successfully");
-  // Verify connection
-  Serial.println("Testing IMU connection...");
-  Serial.println(accelgyro.testConnection() ? "IMU connection successful" : "IMU connection failed");
-
   // TODO: Initialize IMU sensor correctly
+  
 }
 
 // Read IMU data from I2C bus
