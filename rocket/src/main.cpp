@@ -10,6 +10,8 @@
 #include <Wire.h>
 #include <Dps3xx.h>
 //#include "I2Cdev.h"
+#include "RF24.h"
+#include <nRF24L01.h>
 
 
 // TODO: Create a pull-up resistor for I2C bus
@@ -37,6 +39,16 @@
 
 // Delay between pressure sensor readings
 #define PS_DELAY 240 // 240 milliseconds
+
+// Define the pins used for the nRF24L01 transceiver module (CE, CSN)
+#define CE_PIN 7
+#define CSN_PIN 8
+
+// Define the maximum number of bytes to be sent in a packet
+#define PACKET_SIZE 32
+
+// Signal timeout in milli seconds. We will reset the data if no signal
+#define SIGNAL_TIMEOUT 500 
 
 
 
@@ -79,6 +91,38 @@ int16_t prs_osr = 2;
 
 // LED pin state
 bool blinkState = false;
+
+
+// Instantiate an object for the nRF24L01 transceiver
+RF24 radio(CE_PIN, CSN_PIN);
+
+// Let these addresses be used for the pair
+uint8_t address[][6] = { "1Node", "2Node" };
+
+// This is last received time of the signal
+unsigned long lastRecvTime = 0; 
+
+// Create a Packet to hold the data
+struct PacketData
+{
+  byte timeStamp;
+  float posXValue;
+  float posYValue;
+  float posZValue;
+  float accXValue;
+  float accYalue; 
+  float accZalue; 
+  float gamValue;
+  float accGamValue;
+  float betaValue;
+  float accBetaValue; 
+};
+PacketData senderData;
+
+struct Packet {
+  byte sequenceNumber;
+  byte data[PACKET_SIZE - sizeof(byte)]; // subtract the size of sequenceNumber
+};
 
 
 
@@ -218,7 +262,23 @@ void readPS(){
   }
 }
 
+void transmitData(PacketData dataFrame){
+  PacketData dataToSend; // the data you want to send
+  dataToSend = dataFrame; 
 
+  // split the data into two packets
+  Packet packet1 = {1, {}};
+  memcpy(packet1.data, &dataToSend, PACKET_SIZE - sizeof(byte));
+
+  Packet packet2 = {2, {}};
+  memcpy(packet2.data, ((byte*)&dataToSend) + PACKET_SIZE - sizeof(byte), sizeof(PacketData) - PACKET_SIZE + sizeof(byte));
+
+  // send the packets
+  radio.stopListening();
+  radio.write(&packet1, sizeof(Packet));
+  radio.write(&packet2, sizeof(Packet));
+  radio.startListening();
+}
 
 
 // ========= Setup ==========
@@ -261,5 +321,8 @@ void loop() {
   // Blink LED to indicate activity
   blinkState = !blinkState;
   digitalWrite(LED_PIN, blinkState);
+
+  // Send the data to the ground controller via radio
+  transmitData(senderData);
 
 }
