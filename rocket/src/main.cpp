@@ -9,7 +9,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Dps3xx.h>
-#include "I2Cdev.h"
+//#include "I2Cdev.h"
 
 
 // TODO: Create a pull-up resistor for I2C bus
