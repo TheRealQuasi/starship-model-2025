@@ -47,12 +47,12 @@
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
 #define CE_PIN 7
 #define CSN_PIN 8
-
-// Define the maximum number of bytes to be sent in a packet
-#define PACKET_SIZE 32
-
-// Signal timeout in milli seconds. We will reset the data if no signal
-#define SIGNAL_TIMEOUT 500 
+// Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
+#define RF24_PA_LEVEL RF24_PA_MIN
+// Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
+#define RF24_SPEED RF24_2MBPS
+// What radio channel to use (0-127). The same on all nodes must match exactly.
+#define RF24_CHANNEL 124 
 
 
 
@@ -101,31 +101,19 @@ bool blinkState = false;
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
 
-// Let these addresses be used for the pair
-uint8_t address[][6] = { "1Node", "2Node" };
+// Indicateds if there is new data to be read from the radio
+bool newControllerData = false;
 
-// This is last received time of the signal
-unsigned long lastRecvTime = 0; 
+// For when to send packets
+unsigned long currentMillis;
+unsigned long prevMillis;
+unsigned long txIntervalMillis = 250; // send once per every 250 milliseconds
 
 // Create a Packet to hold the data
-struct PacketData
-{
-  byte timeStamp;
-  float posXValue;
-  float posYValue;
-  float posZValue;
-  float accXValue;
-  float accYalue; 
-  float accZalue; 
-  float gamValue;
-  float accGamValue;
-  float betaValue;
-  float accBetaValue; 
-};
 PacketData senderData;
 
-struct Packet {
-  byte sequenceNumber;
+// Acknowledge payload to hold the data coming from the rocket
+ControlData ackData;
 
 
 
@@ -272,21 +260,6 @@ void readPS(){
 // =============================================================================================
 //  Main Program
 // =============================================================================================
-  Packet packet1 = {1, {}};
-  memcpy(packet1.data, &dataToSend, PACKET_SIZE - sizeof(byte));
-
-  Packet packet2 = {2, {}};
-  memcpy(packet2.data, ((byte*)&dataToSend) + PACKET_SIZE - sizeof(byte), sizeof(PacketData) - PACKET_SIZE + sizeof(byte));
-
-  // send the packets
-  radio.stopListening();
-  radio.write(&packet1, sizeof(Packet));
-  radio.write(&packet2, sizeof(Packet));
-  radio.startListening();
-}
-
-
-// ========= Setup ==========
 
 void setup() {
   // Initialize serial communication for debugging
@@ -299,6 +272,9 @@ void setup() {
   Serial.println("");
   Serial.println("Initializing I2C bus...");
   #endif
+
+  // Initialize radio module
+  initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
 
   // Initialize I2C bus
   Wire.begin();
@@ -315,10 +291,6 @@ void setup() {
   #endif
 }
 
-
-
-// ========= Loop ==========
-
 void loop() {
   //readIMU();
   readPS();
@@ -328,6 +300,13 @@ void loop() {
   digitalWrite(LED_PIN, blinkState);
 
   // Send the data to the ground controller via radio
-  transmitData(senderData);
+  currentMillis = millis();
+  if (currentMillis - prevMillis >= txIntervalMillis) {
+    if(!transmitData(radio, senderData, ackData, newControllerData, prevMillis)){
+      // Connection lost to the ground controller
+      // Set flag and try reconnecting in the next loop
+      // TODO: Initialize landing script and dearm the rocket
+    }
+  }
 
 }
