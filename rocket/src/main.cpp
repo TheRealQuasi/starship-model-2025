@@ -5,6 +5,9 @@
 * By Emlzdev (Emil Reinfeldt)
 */
 
+// =============================================================================================
+//  Preprocessor Definitions
+// =============================================================================================
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -12,17 +15,17 @@
 //#include "I2Cdev.h"
 #include "RF24.h"
 #include <nRF24L01.h>
-
-
-// TODO: Create a pull-up resistor for I2C bus
-
+#include "GlobalDecRocket.h"
+#include "RadioTransceiverMaster.h"
 
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 #define DEBUG
 
 
 
-// ========= Constants ==========
+// =============================================================================================
+//  Constants
+// =============================================================================================
 
 // Sensor adresses for I2C
 #define IMU_ADR 0x68 //b1101000
@@ -40,6 +43,7 @@
 // Delay between pressure sensor readings
 #define PS_DELAY 240 // 240 milliseconds
 
+// ====== Radio Configuration ======
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
 #define CE_PIN 7
 #define CSN_PIN 8
@@ -52,7 +56,9 @@
 
 
 
-// ========= Variables/Objects ==========
+// =============================================================================================
+//  Variables/Objects
+// =============================================================================================
 
 // Pressure sensor object
 Dps3xx Dps3xxPressureSensor = Dps3xx();
@@ -92,7 +98,6 @@ int16_t prs_osr = 2;
 // LED pin state
 bool blinkState = false;
 
-
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
 
@@ -121,12 +126,12 @@ PacketData senderData;
 
 struct Packet {
   byte sequenceNumber;
-  byte data[PACKET_SIZE - sizeof(byte)]; // subtract the size of sequenceNumber
-};
 
 
 
-// ========= Functions ==========
+// =============================================================================================
+//  Functions
+// =============================================================================================
 
 // Initialize pressure sensor
 void initDPS310(){
@@ -262,11 +267,11 @@ void readPS(){
   }
 }
 
-void transmitData(PacketData dataFrame){
-  PacketData dataToSend; // the data you want to send
-  dataToSend = dataFrame; 
 
-  // split the data into two packets
+
+// =============================================================================================
+//  Main Program
+// =============================================================================================
   Packet packet1 = {1, {}};
   memcpy(packet1.data, &dataToSend, PACKET_SIZE - sizeof(byte));
 
