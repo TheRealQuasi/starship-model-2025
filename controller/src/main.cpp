@@ -29,7 +29,7 @@
 #define RF24_CHANNEL 124
 
 // Baudrate for serial communication 
-#define BAUDRATE 28800 
+#define BAUDRATE 9600 
 
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
