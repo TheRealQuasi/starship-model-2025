@@ -31,6 +31,9 @@ uint8_t address[][6] = { "1Node" };
 // This is last received time of the signal
 unsigned long lastRecvTime = 0; 
 
+// This is last time "signal lost" message was printed
+unsigned long lastSignalLostPrinted = 0;
+
 // Create a Packet structure to hold the data that will be received from the other node
 struct Packet {
   byte sequenceNumber;
@@ -126,7 +129,10 @@ void checkSignalLoss(){
   {
     // Signal lost. TODO: Reset the input values or execute some script
     #ifdef DEBUG
-      Serial.print("RF Signal lost");
+      if (now - lastSignalLostPrinted > 5000) { // only print the message if at least 5 seconds have passed
+        Serial.println("RF Signal lost");
+        lastSignalLostPrinted = now; // update the last print time
+      }
     #endif
   }
 }
