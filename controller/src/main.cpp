@@ -17,7 +17,7 @@
 // =============================================================================================
 //  Definitions and Configuration
 // =============================================================================================
-
+ 
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
 #define CE_PIN 7
 #define CSN_PIN 8
@@ -29,7 +29,7 @@
 #define RF24_CHANNEL 124
 
 // Baudrate for serial communication 
-#define BAUDRATE 9600 
+#define BAUDRATE 115200
 
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
@@ -113,7 +113,7 @@ void setup(){
 
   Serial.println("==== Controller initializing... ====");
   Serial.println("");
-  
+  delay(1000); // Delay for 1 second before starting the program
   // Initialize the radio communication module
   initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL, controllerData);
   

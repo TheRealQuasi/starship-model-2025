@@ -13,6 +13,9 @@
 
 #include "GlobalDecRocket.h"
 #include "RadioTransceiverMaster.h"
+#include <Arduino.h>
+
+#define DEBUG
 
 
 // =============================================================================================
@@ -73,11 +76,17 @@ void initRadio( RF24& radio,
                 uint8_t channel
                 )
 {
-  // Initiate the radio object
+  // Initialize the transceiver on the SPI bus
   #ifdef DEBUG
     Serial.println("Initializing radio...");
   #endif
-  radio.begin();
+  while (!radio.begin()) {
+    #ifdef DEBUG
+      Serial.println(F("radio hardware is not responding!!"));
+    #endif
+    delay(3000); // wait 3 seconds before trying again
+    //while (1) {}  // hold in infinite loop
+  }
 
   // Set the transmit power to lowest available to prevent power supply related issues (not needed with power breakout board)
   #ifdef DEBUG
@@ -117,6 +126,12 @@ void initRadio( RF24& radio,
     Serial.println("\tSetting pipe addresses...");
   #endif
   radio.openWritingPipe(address[0]);
+
+  // Display settings
+  #ifdef DEBUG
+    Serial.println("\tRadio settings:");
+    radio.printPrettyDetails();
+  #endif
 }
 
 /**
@@ -180,7 +195,7 @@ bool transmitData(  RF24& radio,
   rslt1 = radio.write( &packet1, sizeof(Packet) );
   #ifdef DEBUG
     Serial.println("Dataframe 1 Sent ");
-    Serial.print(packet1);
+    //Serial.print(packet1);
   #endif
 
   // Recive the acknowledge and data from ground control
@@ -190,7 +205,7 @@ bool transmitData(  RF24& radio,
       newControllerData = true;
       #ifdef DEBUG
         Serial.println("  Acknowledged and recived data: ");
-        Serial.println(ackData);
+        //Serial.println(ackData);
       #endif
     }
     else {
@@ -203,6 +218,7 @@ bool transmitData(  RF24& radio,
     #ifdef DEBUG
       Serial.println("  Tx failed");
     #endif
+    checkSignalLoss();
     return false;
   }
 
@@ -211,7 +227,7 @@ bool transmitData(  RF24& radio,
   rslt2 = radio.write( &packet2, sizeof(Packet) );
   #ifdef DEBUG
     Serial.print("Dataframe 2 Sent ");
-    Serial.print(packet2);
+    //Serial.print(packet2);
   #endif
 
   // Recive the acknowledge and data from ground control

@@ -14,7 +14,7 @@
 #include <Dps3xx.h>
 //#include "I2Cdev.h"
 #include "RF24.h"
-#include <nRF24L01.h>
+//#include <nRF24L01.h>
 #include "GlobalDecRocket.h"
 #include "RadioTransceiverMaster.h"
 
@@ -32,10 +32,10 @@
 //#define PRESSURE_SENSOR_ADR 0x77 // Default and does not need to be given
 
 // Baudrate for serial communication to terminal on computer
-#define BAUDRATE 250000 
+#define BAUDRATE 115200 
 
 // LED pin on microcontroller
-#define LED_PIN 13
+/* #define LED_PIN 13 */
 
 // Timeout to wait before skipping a task
 #define TIMEOUT_DURATION 15000000 // 15 seconds
@@ -45,8 +45,8 @@
 
 // ====== Radio Configuration ======
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
-#define CE_PIN 7
-#define CSN_PIN 8
+#define CE_PIN 9
+#define CSN_PIN 10
 // Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
 #define RF24_PA_LEVEL RF24_PA_MIN
 // Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
@@ -96,7 +96,7 @@ int16_t prs_osr = 2;
 // TODO: Add IMU sensor data variables
 
 // LED pin state
-bool blinkState = false;
+/* bool blinkState = false; */
 
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
@@ -263,11 +263,12 @@ void readPS(){
 
 void setup() {
   // Initialize serial communication for debugging
+  #ifdef DEBUG
   Serial.begin(BAUDRATE); 
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB
   }
-  #ifdef DEBUG
+  
   Serial.println("==== Starship model initializing... ====");
   Serial.println("");
   Serial.println("Initializing I2C bus...");
@@ -281,10 +282,10 @@ void setup() {
 
   // Initialize sensors
   //initIMU();
-  initDPS310();
+  //initDPS310();
 
   // Configure microcontroller LED for TX/RX status
-  pinMode(LED_PIN, OUTPUT);
+  /* pinMode(LED_PIN, OUTPUT); */
 
   #ifdef DEBUG
   Serial.println("Init complete!");
@@ -293,11 +294,11 @@ void setup() {
 
 void loop() {
   //readIMU();
-  readPS();
+  //readPS();
 
   // Blink LED to indicate activity
-  blinkState = !blinkState;
-  digitalWrite(LED_PIN, blinkState);
+  /* blinkState = !blinkState;
+  digitalWrite(LED_PIN, blinkState); */
 
   // Send the data to the ground controller via radio
   currentMillis = millis();
@@ -306,6 +307,7 @@ void loop() {
       // Connection lost to the ground controller
       // Set flag and try reconnecting in the next loop
       // TODO: Initialize landing script and dearm the rocket
+      //Serial.println("Connection lost to the ground controller. Trying to reconnect...");
     }
   }
 

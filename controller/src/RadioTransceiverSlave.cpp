@@ -15,6 +15,7 @@
 #include "RadioTransceiverSlave.h"
 
 
+
 // =============================================================================================
 //  Definitions and Configuration
 // =============================================================================================
@@ -82,9 +83,12 @@ void initRadio( RF24& radio,
                 ControlData& controllerData
                 )
 {
-  // Initiate the radio object
+  // Initialize the transceiver on the SPI bus
   Serial.println("Initializing radio...");
-  radio.begin();
+  if (!radio.begin()) {
+    Serial.println(F("radio hardware is not responding!!"));
+    while (1) {}  // hold in infinite loop
+  }
 
   /* 
   * Set the transmit power to lowest available to prevent power supply related issues
@@ -108,6 +112,10 @@ void initRadio( RF24& radio,
   // Use a channel unlikely to be used by Wifi, Microwave ovens etc
   Serial.println("\tSetting channel...");
   radio.setChannel(channel);
+
+  // Print the details of the radio
+  Serial.println("\tRadio settings:");
+  //radio.printPrettyDetails();
 
   // Start the radio listening for data
   Serial.println("\tStart listening...");
