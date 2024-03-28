@@ -34,9 +34,6 @@
 // Baudrate for serial communication to terminal on computer
 #define BAUDRATE 115200 
 
-// LED pin on microcontroller
-/* #define LED_PIN 13 */
-
 // Timeout to wait before skipping a task
 #define TIMEOUT_DURATION 15000000 // 15 seconds
 
@@ -45,8 +42,8 @@
 
 // ====== Radio Configuration ======
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
-#define CE_PIN 9
-#define CSN_PIN 10
+#define CE_PIN 9    //9 teensy, 2 arduino uno (lighter color)
+#define CSN_PIN 10  //10 teensy, 4 arduino uno (lighter color)
 // Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
 #define RF24_PA_LEVEL RF24_PA_MIN
 // Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
@@ -95,9 +92,6 @@ int16_t prs_osr = 2;
 // IMU sensor data
 // TODO: Add IMU sensor data variables
 
-// LED pin state
-/* bool blinkState = false; */
-
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
 
@@ -107,7 +101,7 @@ bool newControllerData = false;
 // For when to send packets
 unsigned long currentMillis;
 unsigned long prevMillis;
-unsigned long txIntervalMillis = 250; // send once per every 250 milliseconds
+unsigned long txIntervalMillis = 2500; // send once per every 250 milliseconds
 
 // Create a Packet to hold the data
 PacketData senderData;
@@ -255,6 +249,21 @@ void readPS(){
   }
 }
 
+// Print the data from the ackData object
+void printAckData(){
+  if(newControllerData){
+    Serial.println("Data from ground control: ");
+    Serial.print("  Throttle: ");
+    Serial.println(ackData.thrustSlider);
+    Serial.print("  X: ");
+    Serial.println(ackData.lxAxisValue);
+    Serial.print("  Y: ");
+    Serial.println(ackData.lyAxisValue);
+    Serial.print("  Armed: ");
+    Serial.println(ackData.armSwitch);
+    newControllerData = false;
+  }
+}
 
 
 // =============================================================================================
@@ -264,14 +273,14 @@ void readPS(){
 void setup() {
   // Initialize serial communication for debugging
   #ifdef DEBUG
-  Serial.begin(BAUDRATE); 
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB
-  }
-  
-  Serial.println("==== Starship model initializing... ====");
-  Serial.println("");
-  Serial.println("Initializing I2C bus...");
+    Serial.begin(BAUDRATE); 
+    while (!Serial) {
+      ; // wait for serial port to connect. Needed for native USB
+    }
+    
+    Serial.println("==== Starship model initializing... ====");
+    Serial.println("");
+    Serial.println("Initializing I2C bus...");
   #endif
 
   // Initialize radio module
@@ -284,9 +293,6 @@ void setup() {
   //initIMU();
   //initDPS310();
 
-  // Configure microcontroller LED for TX/RX status
-  /* pinMode(LED_PIN, OUTPUT); */
-
   #ifdef DEBUG
   Serial.println("Init complete!");
   #endif
@@ -296,10 +302,6 @@ void loop() {
   //readIMU();
   //readPS();
 
-  // Blink LED to indicate activity
-  /* blinkState = !blinkState;
-  digitalWrite(LED_PIN, blinkState); */
-
   // Send the data to the ground controller via radio
   currentMillis = millis();
   if (currentMillis - prevMillis >= txIntervalMillis) {
@@ -307,8 +309,17 @@ void loop() {
       // Connection lost to the ground controller
       // Set flag and try reconnecting in the next loop
       // TODO: Initialize landing script and dearm the rocket
-      //Serial.println("Connection lost to the ground controller. Trying to reconnect...");
+      #ifdef DEBUG
+        Serial.println("Connection lost to the ground controller. Trying to reconnect...");
+      #endif
     }
+    else {
+      //Print data from ackData
+      #ifdef DEBUG
+        printAckData();
+      #endif
+    }
+    prevMillis = currentMillis;
   }
 
 }

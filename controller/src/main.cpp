@@ -19,8 +19,8 @@
 // =============================================================================================
  
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
-#define CE_PIN 7
-#define CSN_PIN 8
+#define CE_PIN 2
+#define CSN_PIN 4
 // Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
 #define RF24_PA_LEVEL RF24_PA_MIN
 // Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
@@ -30,6 +30,23 @@
 
 // Baudrate for serial communication 
 #define BAUDRATE 115200
+
+// Joystick configuration
+#define JOYSTICK_X A1
+#define JOYSTICK_Y A2
+#define JOYSTICK_BUTTON 7
+
+// Thrust slider configuration
+#define THRUST_SLIDER A0
+
+// Armed switch configuration
+#define ARMED_SWITCH 3
+
+
+
+// =============================================================================================
+//  Declarations
+// =============================================================================================
 
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
@@ -53,17 +70,6 @@ ControlData controllerData;
 // =============================================================================================
 //  Functions
 // =============================================================================================
-
-//Assign default input received values
-/* void setInputDefaultValues()
-{
-  // TODO: implement controller with joystick input
-  // The middle position for joystick. (254/2=127)
-  senderData.armSwitch = LOW;
-  senderData.thrustSlider = 0;
-  senderData.lxAxisValue = 127;
-  senderData.lyAxisValue = 127; 
-} */
 
 /**
  * The function `printData` prints received data values if `newData` is true and then sets `newData` to
@@ -99,6 +105,43 @@ void printData() {
   }
 }
 
+/**
+ * The function `readController` reads input data from various sensors and maps the values to specific
+ * ranges.
+ */
+void readController(){
+  controllerData.armSwitch = !digitalRead(ARMED_SWITCH);
+  controllerData.thrustSlider = map(analogRead(THRUST_SLIDER), 0, 1023, 0, 255);
+  controllerData.lxAxisValue = map(analogRead(JOYSTICK_X), 0, 1023, 0, 255);
+  controllerData.lyAxisValue = map(analogRead(JOYSTICK_Y), 0, 1023, 0, 255);
+}
+
+/**
+ * The function `printControllerData` prints the values of various controller data variables to the
+ * Serial monitor in C++.
+ */
+void printControllerData(){
+  Serial.print("Arm switch: ");
+  Serial.print(controllerData.armSwitch);
+  Serial.print(", Thrust slider: ");
+  Serial.print(controllerData.thrustSlider);
+  Serial.print(", LX axis value: ");
+  Serial.print(controllerData.lxAxisValue);
+  Serial.print(", LY axis value: ");
+  Serial.print(controllerData.lyAxisValue);
+  Serial.println("");
+}
+
+//Assign default input received values
+void setInputDefaultValues()
+{
+  // The middle position for joystick. (254/2=127)
+  controllerData.armSwitch = 0;
+  controllerData.thrustSlider = 0;
+  controllerData.lxAxisValue = 127;
+  controllerData.lyAxisValue = 127; 
+}
+
 
 
 // =============================================================================================
@@ -114,17 +157,21 @@ void setup(){
   Serial.println("==== Controller initializing... ====");
   Serial.println("");
   delay(1000); // Delay for 1 second before starting the program
+  
   // Initialize the radio communication module
   initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL, controllerData);
   
   Serial.println("Init complete!");
+
+  // Set armswitch to pullup
+  pinMode(ARMED_SWITCH, INPUT_PULLUP);
+
 }
 
 void loop(){
 
-  // Receive data
+  // Receive and print data
   newData = receiveData(radio, receiverData, controllerData);
-
   printData();
 
 }

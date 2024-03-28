@@ -6,8 +6,8 @@
 
 #pragma once
 
-#ifndef GLOBALDEF_H
-#define GLOBALDEF_H
+#ifndef GLOBALDECGCONTROL_H
+#define GLOBALDECGCONTROL_H
 
 #include <Arduino.h>
 

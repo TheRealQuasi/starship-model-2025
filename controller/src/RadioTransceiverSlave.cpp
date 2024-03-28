@@ -24,7 +24,7 @@
 #define PACKET_SIZE 32
 
 // Signal timeout in milli seconds. We will reset the data if no signal
-#define SIGNAL_TIMEOUT 500 
+#define SIGNAL_TIMEOUT 5000
 
 // Let these addresses be used for the pair
 uint8_t address[][6] = { "1Node" };
@@ -34,11 +34,6 @@ unsigned long lastRecvTime = 0;
 
 // This is last time "signal lost" message was printed
 unsigned long lastSignalLostPrinted = 0;
-
-/* // For when to send packets
-unsigned long currentMillis;
-unsigned long prevMillis;
-unsigned long txIntervalMillis = 1000; // send once per second */
 
 // Create a Packet structure to hold the data that will be received from the other node
 struct Packet {
@@ -85,9 +80,9 @@ void initRadio( RF24& radio,
 {
   // Initialize the transceiver on the SPI bus
   Serial.println("Initializing radio...");
-  if (!radio.begin()) {
+  while (!radio.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
-    while (1) {}  // hold in infinite loop
+    delay(3000);
   }
 
   /* 
@@ -104,6 +99,9 @@ void initRadio( RF24& radio,
   // Open a reading pipe on the radio
   Serial.println("\tSetting pipe address...");
   radio.openReadingPipe(1, address[0]);
+
+  // Set the auto acknowledge feature to true (may not be necessary)
+  radio.setAutoAck(true);
 
   // Enable payload by acknowledgement
   Serial.println("\tEnabling ack payload...");
@@ -124,6 +122,14 @@ void initRadio( RF24& radio,
   // Pre-load data to send from buffer
   Serial.println("\tPre-loading data...");
   radio.writeAckPayload(1, &controllerData, sizeof(ControlData));
+
+  /*   // Clear the buffer (DEBUG)
+  Packet clearPacket;
+  while (radio.available()) {
+    // Read each available payload, but don't do anything with it
+    radio.read(&clearPacket, sizeof(Packet));
+    Serial.println("Clearing buffer");
+  } */
 }
 
 /**
@@ -143,18 +149,23 @@ void initRadio( RF24& radio,
 bool receiveData(RF24& radio, PacketData& receiverData, ControlData& controllerData)
 {
   Packet packet;
+  bool newData = false;
 
   // Check if RF is connected and packet is available 
   if(radio.isChipConnected() && radio.available())
   {
     radio.read(&packet, sizeof(Packet));
     if (packet.sequenceNumber == 1) {
+      Serial.println("Packet 1 received");
       // this is the first packet, store the data
       memcpy(&receiverData, packet.data, PACKET_SIZE - sizeof(byte));
+      newData = true;
     } 
     else if (packet.sequenceNumber == 2) {
+      Serial.println("Packet 2 received");
       // this is the second packet, combine it with the first packet's data to form a PacketData
       memcpy(((byte*)&receiverData) + PACKET_SIZE - sizeof(byte), packet.data, sizeof(PacketData) - PACKET_SIZE + sizeof(byte));
+      newData = true;
     } 
     else {
       Serial.println("Unknown packet type received.");
@@ -164,7 +175,7 @@ bool receiveData(RF24& radio, PacketData& receiverData, ControlData& controllerD
     radio.writeAckPayload(1, &controllerData, sizeof(ControlData));
 
     lastRecvTime = millis();
-    return true;
+    return newData;
   }
   else
   {

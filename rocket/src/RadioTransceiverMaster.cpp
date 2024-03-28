@@ -85,7 +85,6 @@ void initRadio( RF24& radio,
       Serial.println(F("radio hardware is not responding!!"));
     #endif
     delay(3000); // wait 3 seconds before trying again
-    //while (1) {}  // hold in infinite loop
   }
 
   // Set the transmit power to lowest available to prevent power supply related issues (not needed with power breakout board)
@@ -99,6 +98,9 @@ void initRadio( RF24& radio,
     Serial.println("\tSetting data rate...");
   #endif
   radio.setDataRate(speed);
+
+  // Set the auto acknowledge feature to true (may not be necessary)
+  radio.setAutoAck(true);
 
   // Enable payload by acknowledgement
   #ifdef DEBUG
@@ -130,7 +132,7 @@ void initRadio( RF24& radio,
   // Display settings
   #ifdef DEBUG
     Serial.println("\tRadio settings:");
-    radio.printPrettyDetails();
+    //radio.printPrettyDetails();
   #endif
 }
 
@@ -174,14 +176,14 @@ void checkSignalLoss(){
  * successful, and `false` if there was a failure during transmission.
  */
 bool transmitData(  RF24& radio, 
-                    PacketData& dataFrame, 
+                    PacketData& dataToSend, //dataFrame, 
                     ControlData& ackData, 
                     bool& newControllerData, 
                     unsigned long& prevMillis
                     )
 {
-  PacketData dataToSend; // The data we want to send
-  dataToSend = dataFrame; 
+  /* PacketData dataToSend; // The data we want to send
+  dataToSend = dataFrame;  */
 
   // Split the data into two packets
   Packet packet1 = {1, {}};
@@ -198,6 +200,7 @@ bool transmitData(  RF24& radio,
     //Serial.print(packet1);
   #endif
 
+  // Wait for ACK or timeout
   // Recive the acknowledge and data from ground control
   if (rslt1) {
     if ( radio.isAckPayloadAvailable() ) {
