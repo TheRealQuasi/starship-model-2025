@@ -23,6 +23,7 @@ a = [0   1    0    0    0    0    0    0    0    0;
      0   0    0    0    0    0    0    0    0    0;
      0   0    0    0    0    0    0    0    0    1;
      0   0    0    0    0    0    0    0    1    0];
+
    %xdot %gam  gdot ydot bet bdot  z   zdot
 A = [0    -g   0    0    0    0    0    0;
      0    0    1    0    0    0    0    0;
@@ -117,12 +118,27 @@ sysd = c2d(sys2,0.01);
 [Kd,S2,P2] = lqr(sys2,Q,R);
 
 
-Qi = eye(16);
+%Qi = eye(16);
 
-[Ki,Si,e] = lqi(sysd,Q,R);
+%[Ki,Si,e] = lqi(sysd,Q,R);
 
 %rank(ctrb(A,B))
 %rank(obsv(A,C))
+
+Ae = [A   zeros(8,8);
+      -C  zeros(8,8)];
+
+Be = [B;
+      zeros(8,3)];
+
+Br = [0;
+     1];
+
+Qi = eye(16);
+
+%sysde = ss(Ae,Be,C,D);
+%sysde = c2d(sysde,0.01);
+[Ke,Se,Pe] = lqi(sysd,Qi,R);
 
 
 %%% KALMAN
