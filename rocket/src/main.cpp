@@ -12,9 +12,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Dps3xx.h>
-//#include "I2Cdev.h"
 #include "RF24.h"
-//#include <nRF24L01.h>
 #include "GlobalDecRocket.h"
 #include "RadioTransceiverMaster.h"
 
