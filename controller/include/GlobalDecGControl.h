@@ -28,6 +28,7 @@ struct PacketData
 
 struct ControlData {
   byte armSwitch;     // Arm switch status
+  byte calButton;     // Calibration button status
   byte thrustSlider;  // 0-255
   byte lxAxisValue;   // 0-255
   byte lyAxisValue;   // 0-255
