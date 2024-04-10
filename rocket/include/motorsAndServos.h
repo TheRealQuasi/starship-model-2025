@@ -24,7 +24,7 @@ void setServo2Pos(int theta2);
 int speedMapping(int thrustLevel);
 void motorsWrite(int s);
 void abortCheck();
-void escCalibration();
+void escCalibration(bool &escCalibrationStatus);
 void initServosMotors();
 
 #endif
