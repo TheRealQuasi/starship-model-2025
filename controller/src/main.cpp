@@ -22,7 +22,7 @@
 #define CE_PIN 2
 #define CSN_PIN 4
 // Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
-#define RF24_PA_LEVEL RF24_PA_MIN
+#define RF24_PA_LEVEL RF24_PA_LOW
 // Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
 #define RF24_SPEED RF24_2MBPS
 // What radio channel to use (0-127). The same on all nodes must match exactly.
@@ -42,6 +42,8 @@
 // Armed switch configuration
 #define ARMED_SWITCH 3
 
+// Calibration button configuration
+#define CAL_BUTTON 5
 
 
 // =============================================================================================
@@ -111,6 +113,7 @@ void printData() {
  */
 void readController(){
   controllerData.armSwitch = !digitalRead(ARMED_SWITCH);
+  controllerData.calButton = !digitalRead(CAL_BUTTON);
   controllerData.thrustSlider = map(analogRead(THRUST_SLIDER), 0, 1023, 0, 255);
   controllerData.lxAxisValue = map(analogRead(JOYSTICK_X), 0, 1023, 0, 255);
   controllerData.lyAxisValue = map(analogRead(JOYSTICK_Y), 0, 1023, 0, 255);
@@ -123,6 +126,8 @@ void readController(){
 void printControllerData(){
   Serial.print("Arm switch: ");
   Serial.print(controllerData.armSwitch);
+  Serial.print(", Calibration button: ");
+  Serial.print(controllerData.calButton);
   Serial.print(", Thrust slider: ");
   Serial.print(controllerData.thrustSlider);
   Serial.print(", LX axis value: ");
@@ -158,6 +163,8 @@ void setup(){
   Serial.println("");
   delay(1000); // Delay for 1 second before starting the program
   
+  setInputDefaultValues();
+
   // Initialize the radio communication module
   initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL, controllerData);
   
@@ -170,8 +177,11 @@ void setup(){
 
 void loop(){
 
+  readController();
+
   // Receive and print data
   newData = receiveData(radio, receiverData, controllerData);
   printData();
+  //printControllerData();
 
 }

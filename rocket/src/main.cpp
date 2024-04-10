@@ -2,7 +2,7 @@
 * This is the main file for the Starship model. 
 * It contains the setup and loop functions, as well as the functions for initializing and reading the sensors.
 * 
-* By Emlzdev (Emil Reinfeldt)
+* By Emlzdev (Emil Reinfeldt), GunnarEdman (Gunnar Edman)
 */
 
 // =============================================================================================
@@ -92,8 +92,8 @@ bool newControllerData = false;
 
 // For when to send packets
 unsigned long currentMillis;
-unsigned long prevMillis;
-unsigned long txIntervalMillis = 2500; // send once per every 250 milliseconds [4 Hz]  <<<<<<<<<------- This is wrong, 2500 is 2.5 seconds
+unsigned long prevMillis = 0;
+unsigned long txIntervalMillis = 2500; // send once per every 250 milliseconds
 
 // Create a Packet to hold the data
 PacketData senderData;
@@ -263,7 +263,6 @@ void printAckData(){
   }
 }
 
-
 // Calibration procedure called after calButton is pressed for at least 2 seconds
 void waitESCCalCommand() {
   // Only execute this code if the ESC is in calibration mode (never in armed mode)
@@ -272,7 +271,7 @@ void waitESCCalCommand() {
     unsigned long t0 = millis();
     unsigned long tPress = millis();
 
-        // Check for calButton press and duration off press
+    // Check for calButton press and duration off press
     while (tPress - t0 < CAL_BUTTON_DURATION) {
       // Check inpus
       transmitData(radio, senderData, ackData, newControllerData, prevMillis);
@@ -293,6 +292,7 @@ void waitESCCalCommand() {
     escCalibration(escCalibrationStatus);
   }
 }
+
 
 
 // =============================================================================================
@@ -318,6 +318,7 @@ void setup() {
   // Initialize servos and ESCs (motors)
   initServosMotors();
 
+  // Wait for ESC calibration command
   waitESCCalCommand();
   
   // Initialize I2C bus
@@ -326,6 +327,26 @@ void setup() {
   // Initialize sensors (needs to happend in the end, to allow for continous IMU sampling)
   //initDPS310();
   imu.initIMU();
+
+  // Initialize the senderData object
+  senderData.timeStamp = 0;
+  senderData.posXValue = 0.0;
+  senderData.posYValue = 0.0;
+  senderData.posZValue = 0.0;
+  senderData.accXValue = 0.0;
+  senderData.accYValue = 0.0;
+  senderData.accZValue = 0.0;
+  senderData.gamValue = 0.0;
+  senderData.accGamValue = 0.0;
+  senderData.betaValue = 0.0;
+  senderData.accBetaValue = 0.0;
+
+  // Initialize the ackData object
+  ackData.armSwitch = 0;
+  ackData.calButton = 0;
+  ackData.thrustSlider = 0;
+  ackData.lxAxisValue = 0;
+  ackData.lyAxisValue = 0;
 
   #ifdef DEBUG
   Serial.println("Init complete!");
