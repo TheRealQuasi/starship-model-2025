@@ -82,7 +82,7 @@ void initRadio( RF24& radio,
   #endif
   while (!radio.begin()) {
     #ifdef DEBUG
-      Serial.println(F("radio hardware is not responding!!"));
+      Serial.println("Radio hardware is not responding!! Trying again in 3 seconds...");
     #endif
     delay(3000); // wait 3 seconds before trying again
   }
@@ -99,15 +99,6 @@ void initRadio( RF24& radio,
   #endif
   radio.setDataRate(speed);
 
-  // Set the auto acknowledge feature to true (may not be necessary)
-  radio.setAutoAck(true);
-
-  // Enable payload by acknowledgement
-  #ifdef DEBUG
-    Serial.println("\tEnabling ack payload...");
-  #endif
-  radio.enableAckPayload();
-
   /*
   * Sets the delay and number of retries upon failed transmission.
   * 5 gives a 1500 µsec delay which is needed for a 32 byte ackPayload
@@ -116,6 +107,24 @@ void initRadio( RF24& radio,
     Serial.println("\tSetting retries...");
   #endif
   radio.setRetries(5,5); // delay, count
+
+  // Set the auto acknowledge feature to true (may not be necessary)
+  //radio.setAutoAck(true);
+
+  // Enable payload by acknowledgement
+  #ifdef DEBUG
+    Serial.println("\tEnabling ack payload...");
+  #endif
+  radio.enableAckPayload();
+
+  /* 
+  * When dynamic payloads are enabled, it allows the radio module to automatically 
+  * adjust the payload size based on the actual data being sent or received. 
+  */
+  #ifdef DEBUG
+    Serial.println("\tEnabling dynamic payloads...");
+  #endif
+  radio.enableDynamicPayloads();
 
   // Use a channel unlikely to be used by Wifi, Microwave ovens etc
   #ifdef DEBUG
@@ -132,8 +141,49 @@ void initRadio( RF24& radio,
   // Display settings
   #ifdef DEBUG
     Serial.println("\tRadio settings:");
-    //radio.printPrettyDetails();
+    radio.printPrettyDetails();
   #endif
+
+
+  // Start handshake with ground control
+  #ifdef DEBUG
+    Serial.println("Handshake with ground control...");
+  #endif
+
+  // The connection message
+  char handshakeMsg[] = "HELLO";
+
+  // Wait for the acknowledgment
+  while (true) {
+    // Send the handshake message
+    if (!radio.write(&handshakeMsg, sizeof(handshakeMsg))) {
+      Serial.println("Failed to send handshake message");
+      //return;
+    }
+
+    if (radio.available()) {
+      char ackMsg[4]; // The acknowledgment message
+      radio.read(&ackMsg, sizeof(ackMsg));
+
+      if (strcmp(ackMsg, "ACK") == 0) {
+        #ifdef DEBUG
+          Serial.println("Handshake successful");
+        #endif
+        break;
+      } else {
+        #ifdef DEBUG
+          Serial.println("Handshake failed: unexpected acknowledgment message");
+        #endif
+      }
+    }
+    #ifdef DEBUG
+    else {
+      Serial.println("Handshake failed: no acknowledgment received");
+    }
+    #endif
+
+    delay(1000); // Wait a bit before checking again
+  }
 }
 
 /**
@@ -196,14 +246,14 @@ bool transmitData(  RF24& radio,
   bool rslt1;
   rslt1 = radio.write( &packet1, sizeof(Packet) );
   #ifdef DEBUG
-    Serial.println("Dataframe 1 Sent ");
+    Serial.println("Sending Dataframe 1");
     //Serial.print(packet1);
   #endif
 
   // Wait for ACK or timeout
   // Recive the acknowledge and data from ground control
   if (rslt1) {
-    if ( radio.isAckPayloadAvailable() ) {
+    if ( /* radio.isAckPayloadAvailable() */ radio.available() ) {
       radio.read(&ackData, sizeof(ackData));
       newControllerData = true;
       #ifdef DEBUG
@@ -229,13 +279,13 @@ bool transmitData(  RF24& radio,
   bool rslt2;
   rslt2 = radio.write( &packet2, sizeof(Packet) );
   #ifdef DEBUG
-    Serial.print("Dataframe 2 Sent ");
+    Serial.println("Sending Dataframe 2");
     //Serial.print(packet2);
   #endif
 
   // Recive the acknowledge and data from ground control
   if (rslt2) {
-    if ( radio.isAckPayloadAvailable() ) {
+    if ( /* radio.isAckPayloadAvailable() */ radio.available() ) {
       radio.read(&ackData, sizeof(ackData)); // To clear FIFO
     }
     else {

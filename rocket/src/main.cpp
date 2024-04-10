@@ -98,7 +98,7 @@ bool newControllerData = false;
 
 // For when to send packets
 unsigned long currentMillis;
-unsigned long prevMillis;
+unsigned long prevMillis = 0;
 unsigned long txIntervalMillis = 2500; // send once per every 250 milliseconds
 
 // Create a Packet to hold the data
@@ -281,6 +281,11 @@ void setup() {
     Serial.println("Initializing I2C bus...");
   #endif
 
+  if (CrashReport) {
+  Serial.print(CrashReport);
+  delay(5000);
+  }
+
   // Initialize radio module
   initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
 
@@ -291,6 +296,25 @@ void setup() {
   //initIMU();
   //initDPS310();
 
+  // Initialize the senderData object
+  senderData.timeStamp = 0;
+  senderData.posXValue = 0.0;
+  senderData.posYValue = 0.0;
+  senderData.posZValue = 0.0;
+  senderData.accXValue = 0.0;
+  senderData.accYValue = 0.0;
+  senderData.accZValue = 0.0;
+  senderData.gamValue = 0.0;
+  senderData.accGamValue = 0.0;
+  senderData.betaValue = 0.0;
+  senderData.accBetaValue = 0.0;
+
+  // Initialize the ackData object
+  ackData.armSwitch = 0;
+  ackData.thrustSlider = 0;
+  ackData.lxAxisValue = 0;
+  ackData.lyAxisValue = 0;
+
   #ifdef DEBUG
   Serial.println("Init complete!");
   #endif
@@ -299,6 +323,10 @@ void setup() {
 void loop() {
   //readIMU();
   //readPS();
+  if (CrashReport) {
+  Serial.print(CrashReport);
+  delay(5000);
+  }
 
   // Send the data to the ground controller via radio
   currentMillis = millis();

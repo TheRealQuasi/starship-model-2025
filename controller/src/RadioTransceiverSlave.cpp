@@ -101,11 +101,18 @@ void initRadio( RF24& radio,
   radio.openReadingPipe(1, address[0]);
 
   // Set the auto acknowledge feature to true (may not be necessary)
-  radio.setAutoAck(true);
+  //radio.setAutoAck(true);
 
   // Enable payload by acknowledgement
   Serial.println("\tEnabling ack payload...");
   radio.enableAckPayload();
+
+  /* 
+  * When dynamic payloads are enabled, it allows the radio module to automatically 
+  * adjust the payload size based on the actual data being sent or received. 
+  */
+  Serial.println("\tEnabling dynamic payloads...");
+  radio.enableDynamicPayloads();
 
   // Use a channel unlikely to be used by Wifi, Microwave ovens etc
   Serial.println("\tSetting channel...");
@@ -115,14 +122,6 @@ void initRadio( RF24& radio,
   Serial.println("\tRadio settings:");
   //radio.printPrettyDetails();
 
-  // Start the radio listening for data
-  Serial.println("\tStart listening...");
-  radio.startListening();
-
-  // Pre-load data to send from buffer
-  Serial.println("\tPre-loading data...");
-  radio.writeAckPayload(1, &controllerData, sizeof(ControlData));
-
   /*   // Clear the buffer (DEBUG)
   Packet clearPacket;
   while (radio.available()) {
@@ -130,6 +129,41 @@ void initRadio( RF24& radio,
     radio.read(&clearPacket, sizeof(Packet));
     Serial.println("Clearing buffer");
   } */
+
+  // Start handshake with the rocket
+  Serial.println("\tStarting handshake...");
+  char ackMsg[] = "ACK";
+  if (!radio.writeAckPayload(1, &ackMsg, sizeof(ackMsg))){
+    Serial.println("Failed to create acknowledgment message");
+  }
+  char handshakeMsg[6]; 
+
+  // Start the radio listening for data
+  Serial.println("\tStart listening...");
+  radio.startListening();
+
+  while ( true ) {
+    if (radio.available()) {
+      
+      radio.read(&handshakeMsg, sizeof(handshakeMsg));
+
+      if (strcmp(handshakeMsg, "HELLO") == 0) {
+        Serial.println("Handshake message received");
+        break;
+      } else {
+        Serial.println("Unexpected message received");
+      }
+    }
+    else {
+      Serial.println("Handshake failed: no handshake received");
+    }
+    delay(1000); // wait a second before trying again
+  }
+
+  // Pre-load data to send from buffer
+  Serial.println("\tPre-loading data...");
+  radio.writeAckPayload(1, &controllerData, sizeof(ControlData));
+
 }
 
 /**
