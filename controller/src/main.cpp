@@ -158,6 +158,8 @@ void setup(){
   Serial.println("");
   delay(1000); // Delay for 1 second before starting the program
   
+  setInputDefaultValues();
+
   // Initialize the radio communication module
   initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL, controllerData);
   
@@ -170,8 +172,11 @@ void setup(){
 
 void loop(){
 
+  readController();
+
   // Receive and print data
   newData = receiveData(radio, receiverData, controllerData);
   printData();
+  //printControllerData();
 
 }
