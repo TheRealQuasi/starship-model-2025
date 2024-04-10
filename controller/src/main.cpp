@@ -42,6 +42,8 @@
 // Armed switch configuration
 #define ARMED_SWITCH 3
 
+// Calibration button configuration
+#define CAL_BUTTON 5
 
 
 // =============================================================================================
@@ -111,6 +113,7 @@ void printData() {
  */
 void readController(){
   controllerData.armSwitch = !digitalRead(ARMED_SWITCH);
+  controllerData.calButton = !digitalRead(CAL_BUTTON);
   controllerData.thrustSlider = map(analogRead(THRUST_SLIDER), 0, 1023, 0, 255);
   controllerData.lxAxisValue = map(analogRead(JOYSTICK_X), 0, 1023, 0, 255);
   controllerData.lyAxisValue = map(analogRead(JOYSTICK_Y), 0, 1023, 0, 255);
@@ -123,6 +126,8 @@ void readController(){
 void printControllerData(){
   Serial.print("Arm switch: ");
   Serial.print(controllerData.armSwitch);
+  Serial.print(", Calibration button: ");
+  Serial.print(controllerData.calButton);
   Serial.print(", Thrust slider: ");
   Serial.print(controllerData.thrustSlider);
   Serial.print(", LX axis value: ");
