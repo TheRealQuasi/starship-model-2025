@@ -28,7 +28,7 @@ struct PacketData
 
 struct ControlData {
   byte armSwitch;     // Arm switch status
-  byte calButton;     // Calibration button status  <<<<<<<<<---------- (Gunnar): Added variable for calButton, needs to be added in ground control
+  byte calButton;     // Calibration button status  <<<<<<<<<---------- (Gunnar): Added variable for calButton
   byte thrustSlider;  // 0-255
   byte lxAxisValue;   // 0-255
   byte lyAxisValue;   // 0-255

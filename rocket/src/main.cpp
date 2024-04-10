@@ -282,17 +282,13 @@ void setup() {
     Serial.println("Initializing I2C bus...");
   #endif
 
-  if (CrashReport) {
-  Serial.print(CrashReport);
-  delay(5000);
-  }
-
   // Initialize radio module
   initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
 
   // Initialize servos and ESCs (motors)
   initServosMotors();
 
+  // Wait for ESC calibration command
   waitESCCalCommand();
   
   // Initialize I2C bus
@@ -317,6 +313,7 @@ void setup() {
 
   // Initialize the ackData object
   ackData.armSwitch = 0;
+  ackData.calButton = 0;
   ackData.thrustSlider = 0;
   ackData.lxAxisValue = 0;
   ackData.lyAxisValue = 0;
@@ -329,10 +326,6 @@ void setup() {
 void loop() {
   //readIMU();
   //readPS();
-  if (CrashReport) {
-  Serial.print(CrashReport);
-  delay(5000);
-  }
 
   // Send the data to the ground controller via radio
   currentMillis = millis();

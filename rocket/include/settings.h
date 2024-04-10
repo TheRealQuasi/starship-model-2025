@@ -34,6 +34,7 @@
 #define CSN_PIN 10  //10 teensy, 4 arduino uno (lighter color)
 
 
+
 // // =============================================================================================
 // //  Constants 
 // // =============================================================================================
@@ -50,12 +51,9 @@
 // ====== Ground control specs ======
 #define CAL_BUTTON_DURATION 2000        // How long the botton needs to hold to enter esc calibration [ms]
 
-
 // ====== Wireless interface ======
-// Sensor adresses for I2C
-#define IMU_ADR 0x68 //b1101000
-//#define PRESSURE_SENSOR_ADR 0x77 // Default and does not need to be given
-
+#define IMU_ADR 0x68 //b1101000 // Sensor adress for I2C communication
+//#define PRESSURE_SENSOR_ADR 0x77 // Default adress and does not need to be given
 
 // ====== Radio Configuration ======
 // Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
@@ -65,13 +63,13 @@
 // What radio channel to use (0-127). The same on all nodes must match exactly.
 #define RF24_CHANNEL 124 
 
-
 // ====== Other ======
 // Baudrate for serial communication to terminal on computer
 #define BAUDRATE 115200 
 
 /* // Timeout to wait before skipping a task
 #define TIMEOUT_DURATION 15000000 // 15 seconds */
+
 
 
 // =============================================================================================
