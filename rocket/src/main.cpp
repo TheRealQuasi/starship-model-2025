@@ -12,9 +12,11 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Dps3xx.h>
+#include <settings.h>
 #include "RF24.h"
 #include "GlobalDecRocket.h"
 #include "RadioTransceiverMaster.h"
+#include "motorsAndServos.h"
 
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 #define DEBUG
@@ -48,7 +50,6 @@
 #define RF24_SPEED RF24_2MBPS
 // What radio channel to use (0-127). The same on all nodes must match exactly.
 #define RF24_CHANNEL 124 
-
 
 
 // =============================================================================================
@@ -99,7 +100,7 @@ bool newControllerData = false;
 // For when to send packets
 unsigned long currentMillis;
 unsigned long prevMillis;
-unsigned long txIntervalMillis = 2500; // send once per every 250 milliseconds
+unsigned long txIntervalMillis = 2500; // send once per every 250 milliseconds [4 Hz]  <<<<<<<<<------- This is wrong, 2500 is 2.5 seconds
 
 // Create a Packet to hold the data
 PacketData senderData;
@@ -107,7 +108,8 @@ PacketData senderData;
 // Acknowledge payload to hold the data coming from the rocket
 ControlData ackData;
 
-
+// ========= Status variables =========
+bool escCalibrationStatus = false;
 
 // =============================================================================================
 //  Functions
@@ -264,6 +266,37 @@ void printAckData(){
 }
 
 
+// Calibration procedure called after calButton is pressed for at least 2 seconds
+void waitESCCalCommand() {
+  // Only execute this code if the ESC is in calibration mode (never in armed mode)
+  if (!escCalibrationStatus) {
+    // Wait for calibration to be granted by the pilot (holding calButton for at least 2 seconds)
+    int t0 = millis();
+    int tPress = millis();
+
+        // Check for calButton press and duration off press
+    while (tPress - t0 < CAL_BUTTON_DURATION) {
+      // Check inpus
+      transmitData(radio, senderData, ackData, newControllerData, prevMillis);
+
+      // Check calButton status
+      if (ackData.calButton) {
+        tPress = millis();
+      }
+
+      // Reset duration if button is not pressed
+      else {
+        t0 = millis();
+        tPress = millis();
+      }
+    }
+
+    // When button press duration is enough, run ESC calibation
+    escCalibration();
+  }
+}
+
+
 // =============================================================================================
 //  Main Program
 // =============================================================================================
@@ -284,12 +317,17 @@ void setup() {
   // Initialize radio module
   initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
 
+  // Initialize servos and ESCs (motors)
+  initServosMotors();
+
+  waitESCCalCommand();
+  
   // Initialize I2C bus
   Wire.begin();
 
-  // Initialize sensors
-  //initIMU();
+  // Initialize sensors (needs to happend in the end, to allow for continous IMU sampling)
   //initDPS310();
+  //initIMU();
 
   #ifdef DEBUG
   Serial.println("Init complete!");
@@ -303,7 +341,7 @@ void loop() {
   // Send the data to the ground controller via radio
   currentMillis = millis();
   if (currentMillis - prevMillis >= txIntervalMillis) {
-    if(!transmitData(radio, senderData, ackData, newControllerData, prevMillis)){
+    if (!transmitData(radio, senderData, ackData, newControllerData, prevMillis)) {
       // Connection lost to the ground controller
       // Set flag and try reconnecting in the next loop
       // TODO: Initialize landing script and dearm the rocket
