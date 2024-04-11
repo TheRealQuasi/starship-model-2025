@@ -34,5 +34,9 @@ struct ControlData {
   byte lyAxisValue;   // 0-255
 };
 
+struct SensorData {
+  float psHeight; // Height from ground (Pressure sensor)
+};
+
 
 #endif
