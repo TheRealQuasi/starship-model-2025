@@ -2,7 +2,8 @@
 * This is the main file for the Starship model. 
 * It contains the setup and loop functions, as well as the functions for initializing and reading the sensors.
 * 
-* By Emlzdev (Emil Reinfeldt), GunnarEdman (Gunnar Edman)
+* By Emlzdev (Emil Reinfeldt), 
+* GunnarEdman (Gunnar Edman)
 */
 
 // =============================================================================================
@@ -20,34 +21,6 @@
 #include "motorsAndServos.h"
 #include "IMU.h"
 
-
-// =============================================================================================
-//  Constants
-// =============================================================================================
-
-// Sensor adresses for I2C
-#define IMU_ADR 0x68 //b1101000
-//#define PRESSURE_SENSOR_ADR 0x77 // Default and does not need to be given
-
-// Baudrate for serial communication to terminal on computer
-#define BAUDRATE 115200 
-
-// Timeout to wait before skipping a task
-#define TIMEOUT_DURATION 15000000 // 15 seconds
-
-// Delay between pressure sensor readings
-#define PS_DELAY 240 // 240 milliseconds
-
-// ====== Radio Configuration ======
-// Define the pins used for the nRF24L01 transceiver module (CE, CSN)
-#define CE_PIN 9    //9 teensy, 2 arduino uno (lighter color)
-#define CSN_PIN 10  //10 teensy, 4 arduino uno (lighter color)
-// Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
-#define RF24_PA_LEVEL RF24_PA_MIN
-// Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
-#define RF24_SPEED RF24_2MBPS
-// What radio channel to use (0-127). The same on all nodes must match exactly.
-#define RF24_CHANNEL 124 
 
 
 // =============================================================================================
