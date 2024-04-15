@@ -28,38 +28,6 @@
 //  Variables/Objects
 // =============================================================================================
 
-// Pressure sensor object
-Dps3xx Dps3xxPressureSensor = Dps3xx();
-
-/*
-  * temperature measure rate (value from 0 to 7)
-  * 2^temp_mr temperature measurement results per second
-  */
-int16_t temp_mr = 2;
-
-/*
-  * temperature oversampling rate (value from 0 to 7)
-  * 2^temp_osr internal temperature measurements per result
-  * A higher value increases precision
-  */
-int16_t temp_osr = 2;
- 
-/*
-  * pressure measure rate (value from 0 to 7)
-  * 2^prs_mr pressure measurement results per second
-  */
-int16_t prs_mr = 2;
-
-/*
-  * pressure oversampling rate (value from 0 to 7)
-  * 2^prs_osr internal pressure measurements per result
-  * A higher value increases precision
-  */
-int16_t prs_osr = 2;
-
-// IMU object
-// TODO: Add IMU object
-
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
 
@@ -83,15 +51,10 @@ SensorData sensorData;
 // ========= Status variables =========
 bool escCalibrationStatus = false;  // Boolean that informs if ESC calibration is performed or not
 
-
 // ========= IMU =========
 // IMU object
 // Objects handeling everything with the BMI088 paired with a madgwick filter
 Imu6DOF imu;
-
-// IMU sensor data
-// TODO: Add IMU sensor data variables
-
 
 // ========= Lidar =========
 TFMPI2C tfmP;         // Create a TFMini-Plus I2C object
@@ -145,20 +108,6 @@ void initDPS310(){
     // TODO: Initialization failed, send error to computer
   }
   #endif
-}
-
-// Initialize IMU
-void initIMU(){
-
-  // TODO: Initialize IMU sensor correctly
-  
-}
-
-// Read IMU data from I2C bus
-void readIMU(){
-
-  // TODO: Add funtions to get data, GUNNAR
-
 }
 
 // Read temperature and pressure
@@ -318,6 +267,7 @@ void setup() {
 
   // Initialize sensors (needs to happend in the end, to allow for continous IMU sampling)
   imu.initIMU();
+
   if(!initDPS310()){
     #ifdef DEBUG
       Serial.println("Failed to initialize the pressure sensor. Check the wiring and try again.");
