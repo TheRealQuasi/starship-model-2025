@@ -363,33 +363,13 @@ private:
   // Get methods
   // Inits BMI088 by connecting via I2C, setting predefined settings and checking connection
   void init_BMI088() {
-    #ifdef DEBUG
-      while (!Serial);
-      Serial.println("BMI088 Raw Data");          // To do: <<<<<<<<<-------- Add "if debug" to serial prints
-
-      while (1) {
-        if (bmi088.isConnection()) {
-          bmi088.initialize();
-          Serial.println("BMI088 is connected");
-          break;
-        } 
-        else {
-          Serial.println("BMI088 is not connected");
-        }
-
-        delay(2000);
+    while (1) {
+      if (bmi088.isConnection()) {
+        bmi088.initialize();
+        break;
       }
-
-      Serial.print('\n');
-  #else
-        while (1) {
-          if (bmi088.isConnection()) {
-            bmi088.initialize();
-            break;
-          }
-          delay(2000);
-        }
-  #endif
+      delay(1000); //2000        // <<<<<<<<<<<<<------------------Not sure if this is needed
+    }
 
   // Adjust IMU-settings (will be adjusted during testing)
   bmi088.setAccScaleRange(RANGE_6G);
