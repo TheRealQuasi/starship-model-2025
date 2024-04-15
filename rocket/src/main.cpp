@@ -2,7 +2,8 @@
 * This is the main file for the Starship model. 
 * It contains the setup and loop functions, as well as the functions for initializing and reading the sensors.
 * 
-* By Emlzdev (Emil Reinfeldt), GunnarEdman (Gunnar Edman)
+* By Emlzdev (Emil Reinfeldt), 
+* GunnarEdman (Gunnar Edman)
 */
 
 // =============================================================================================
@@ -12,11 +13,13 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Dps3xx.h>
+#include <TFMPI2C.h>  // TFMini-Plus I2C Library v1.7.3
 #include <settings.h>
 #include "RF24.h"
 #include "GlobalDecRocket.h"
 #include "RadioTransceiverMaster.h"
 #include "motorsAndServos.h"
+#include "IMU.h"
 
 
 
@@ -53,11 +56,6 @@ int16_t prs_mr = 2;
   */
 int16_t prs_osr = 2;
 
-// IMU object
-// TODO: Add IMU object
-
-// IMU sensor data
-// TODO: Add IMU sensor data variables
 
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
@@ -77,7 +75,25 @@ PacketData senderData;
 ControlData ackData;
 
 // ========= Status variables =========
-bool escCalibrationStatus = false;
+bool escCalibrationStatus = false;  // Boolean that informs if ESC calibration is performed or not
+
+
+// ========= IMU =========
+// IMU object
+// Objects handeling everything with the BMI088 paired with a madgwick filter
+Imu6DOF imu;
+
+// IMU sensor data
+// TODO: Add IMU sensor data variables
+
+
+// ========= Lidar =========
+TFMPI2C tfmP;         // Create a TFMini-Plus I2C object
+
+// Variables storing data from TFmini plus
+int16_t tfDist = 0;       // Distance to object in centimeters
+int16_t tfFlux = 0;       // Signal strength or quality of return signal
+int16_t tfTemp = 0;       // Internal temperature of Lidar sensor chip
 
 // =============================================================================================
 //  Functions
@@ -125,19 +141,6 @@ void initDPS310(){
   #endif
 }
 
-// Initialize IMU
-void initIMU(){
-
-  // TODO: Initialize IMU sensor correctly
-  
-}
-
-// Read IMU data from I2C bus
-void readIMU(){
-
-  // TODO: Add funtions to get data, GUNNAR
-
-}
 
 // Read temperature and pressure
 void readPS(){
@@ -238,8 +241,8 @@ void waitESCCalCommand() {
   // Only execute this code if the ESC is in calibration mode (never in armed mode)
   if (!escCalibrationStatus) {
     // Wait for calibration to be granted by the pilot (holding calButton for at least 2 seconds)
-    int t0 = millis();
-    int tPress = millis();
+    unsigned long t0 = millis();
+    unsigned long tPress = millis();
 
     // Check for calButton press and duration off press
     while (tPress - t0 < CAL_BUTTON_DURATION) {
@@ -296,7 +299,7 @@ void setup() {
 
   // Initialize sensors (needs to happend in the end, to allow for continous IMU sampling)
   //initDPS310();
-  //initIMU();
+  imu.initIMU();
 
   // Initialize the senderData object
   senderData.timeStamp = 0;
@@ -324,7 +327,12 @@ void setup() {
 }
 
 void loop() {
-  //readIMU();
+  // Time management
+  imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
+
+  // Read sensors and filter data
+  imu.imuUpdate();                          // Get IMU data and filter it with LP / smoothing and Madgwick-filters
+  tfmP.getData( tfDist, tfFlux, tfTemp);    // Get a frame of data from the TFmini
   //readPS();
 
   // Send the data to the ground controller via radio
@@ -346,4 +354,7 @@ void loop() {
     }
     prevMillis = currentMillis;
   }
+
+  // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
+  imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
 }
