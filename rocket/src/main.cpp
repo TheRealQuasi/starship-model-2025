@@ -20,42 +20,13 @@
 #include "RadioTransceiverMaster.h"
 #include "motorsAndServos.h"
 #include "IMU.h"
+#include "Barometer.h"
 
 
 
 // =============================================================================================
 //  Variables/Objects
 // =============================================================================================
-
-// Pressure sensor object
-Dps3xx Dps3xxPressureSensor = Dps3xx();
-
-/*
-  * temperature measure rate (value from 0 to 7)
-  * 2^temp_mr temperature measurement results per second
-  */
-int16_t temp_mr = 2;
-
-/*
-  * temperature oversampling rate (value from 0 to 7)
-  * 2^temp_osr internal temperature measurements per result
-  * A higher value increases precision
-  */
-int16_t temp_osr = 2;
- 
-/*
-  * pressure measure rate (value from 0 to 7)
-  * 2^prs_mr pressure measurement results per second
-  */
-int16_t prs_mr = 2;
-
-/*
-  * pressure oversampling rate (value from 0 to 7)
-  * 2^prs_osr internal pressure measurements per result
-  * A higher value increases precision
-  */
-int16_t prs_osr = 2;
-
 
 // Instantiate an object for the nRF24L01 transceiver
 RF24 radio(CE_PIN, CSN_PIN);
@@ -74,18 +45,16 @@ PacketData senderData;
 // Acknowledge payload to hold the data coming from the rocket
 ControlData ackData;
 
+// Store sensor data
+SensorData sensorData;
+
 // ========= Status variables =========
 bool escCalibrationStatus = false;  // Boolean that informs if ESC calibration is performed or not
-
 
 // ========= IMU =========
 // IMU object
 // Objects handeling everything with the BMI088 paired with a madgwick filter
 Imu6DOF imu;
-
-// IMU sensor data
-// TODO: Add IMU sensor data variables
-
 
 // ========= Lidar =========
 TFMPI2C tfmP;         // Create a TFMini-Plus I2C object
@@ -140,7 +109,6 @@ void initDPS310(){
   }
   #endif
 }
-
 
 // Read temperature and pressure
 void readPS(){
@@ -298,8 +266,13 @@ void setup() {
   Wire.begin();
 
   // Initialize sensors (needs to happend in the end, to allow for continous IMU sampling)
-  //initDPS310();
   imu.initIMU();
+
+  if(!initDPS310()){
+    #ifdef DEBUG
+      Serial.println("Failed to initialize the pressure sensor. Check the wiring and try again.");
+    #endif
+  }
 
   // Initialize the senderData object
   senderData.timeStamp = 0;
@@ -333,7 +306,33 @@ void loop() {
   // Read sensors and filter data
   imu.imuUpdate();                          // Get IMU data and filter it with LP / smoothing and Madgwick-filters
   tfmP.getData( tfDist, tfFlux, tfTemp);    // Get a frame of data from the TFmini
-  //readPS();
+  //Read barometer data
+  float psReturn = readPS();
+  if (psReturn == (-2)){
+    #ifdef DEBUG
+      Serial.println("No data to be found yet. Please wait...");
+    #endif
+  }
+  else if (psReturn == (-1)){
+    #ifdef DEBUG
+      Serial.println("Error reading the pressure sensor. Please check the wiring and try again.");
+    #endif
+  }
+  else{
+    #ifdef DEBUG
+      Serial.print("Pressure: ");
+      Serial.print(psReturn);
+      Serial.println(" hPa");
+    #endif
+
+    sensorData.psHeight = psReturn;
+  }
+
+
+
+
+
+
 
   // Send the data to the ground controller via radio
   currentMillis = millis();

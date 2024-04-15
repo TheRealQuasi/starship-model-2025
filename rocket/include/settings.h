@@ -87,4 +87,32 @@
 
 // ====== Pressure sensor configuration ======
 // Delay between pressure sensor readings
-#define PS_DELAY 240 // 240 milliseconds
+#define PS_DELAY 240 // In milliseconds (to use 128 Hz (max for sensor) => 7.8125 ms)
+
+/*
+  * temperature measure rate (value from 0 to 7)
+  * 2^temp_mr temperature measurement results per second
+  */
+#define TEMP_MR 2
+
+/*
+  * temperature oversampling rate (value from 0 to 7)
+  * 2^temp_osr internal temperature measurements per result
+  * A higher value increases precision
+  */
+#define TEMP_OSR 2
+ 
+/*
+  * pressure measure rate (value from 0 to 7)
+  * 2^prs_mr pressure measurement results per second
+  */
+#define PRS_MR 2
+
+/*
+  * pressure oversampling rate (value from 0 to 7)
+  * 2^prs_osr internal pressure measurements per result
+  * A higher value increases precision
+  */
+#define PRS_OSR 2
+
+
