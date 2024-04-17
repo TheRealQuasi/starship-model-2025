@@ -73,6 +73,8 @@ bool initDPS310(){
   }
   else
   {
+    
+
     #ifdef DEBUG
         Serial.println("Init Dsp310 complete!");
     #endif
@@ -122,7 +124,7 @@ float readPS(){
     else
     {
       #ifdef DEBUG
-        Serial.println();
+        /* Serial.println();
         Serial.println();
         Serial.print(temperatureCount);
         Serial.println(" temperature values found: ");
@@ -131,7 +133,7 @@ float readPS(){
         {
           Serial.print(temperature[i]);
           Serial.println(" degrees of Celsius");
-        }
+        } */
 
         Serial.println();
         Serial.print(pressureCount);
@@ -142,7 +144,6 @@ float readPS(){
           Serial.println(" Pascal");
         }
       #endif
-
       height = calculateHeight(pressure[0]);
     }
     lastTime = currentTime; // Update the last time we read the sensor
@@ -153,5 +154,11 @@ float readPS(){
 
 // Calculate the height from ground level in meters
 float calculateHeight(float pressure){
-  return 44330 * (1.0 - pow((pressure / seaLevelPressure), 0.1903)); // Height in meters
+  Serial.print("In calc ");
+  Serial.print(pressure);
+  pressure = pressure / 100; // Convert pressure from Pascal to hPa
+  float result = (44330 * (1.0 - pow((pressure / seaLevelPressure), 0.1903)));
+  Serial.print(" Height: ");
+  Serial.println(result);
+  return result; // Height in meters
 }
