@@ -91,6 +91,9 @@ public:
 
   // Inits for the entire IMU object
   void initIMU () {
+    #ifdef DEBUG
+      Serial.print("\n IMU init started \n");
+    #endif
     init_BMI088();
     delay(500);
 
@@ -107,6 +110,16 @@ public:
   void imuUpdate () {
     getIMUdata_BMI088();
     madgwickStep();
+    #ifdef DEBUG
+      Serial.print("\t");
+      Serial.print("(Xr, Yr, Zr):\t");
+      Serial.print(roll_IMU);
+      Serial.print("\t");
+      Serial.print(pitch_IMU);
+      Serial.print("\t");
+      Serial.print(yaw_IMU);
+      Serial.print("\n");
+    #endif
   }
 
   // <<<<<<<<------------------- To do: Might need to add "get" functions to feed values to global variables in main
@@ -235,6 +248,10 @@ private:
     * accelerometer values AccX, AccY, AccZ, GyroX, GyroY, GyroZ in getIMUdata(). This eliminates drift in the
     * measurement. 
     */
+    #ifdef DEBUG
+      Serial.print("Calibrating IMU - Steady state error calculation \n");
+    #endif
+
     AccErrorX = 0.0;
     AccErrorY = 0.0;
     AccErrorZ = 0.0;
@@ -350,6 +367,10 @@ private:
       * to boot. 
       */
     //Warm up IMU and madgwick filter in simulated main loop
+    #ifdef DEBUG
+      Serial.print("\n \n Warming up madgwick filter \n ------------------------ \n");
+    #endif
+
     for (int i = 0; i <= 10000; i++) {
       prev_time = current_time;      
       current_time = micros();      
