@@ -15,7 +15,7 @@
 #include "RadioTransceiverMaster.h"
 #include <Arduino.h>
 
-#define DEBUG
+// #define DEBUG
 
 
 // =============================================================================================

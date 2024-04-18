@@ -12,12 +12,12 @@
 
 // =================================================================
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
-    #define DEBUG
+// #define DEBUG
 // =================================================================
 
 
 // Reference values
-#define ALT_REF 2
+#define ALT_REF 1
 
 
 // =============================================================================================
@@ -44,10 +44,10 @@
 
 // ====== Motor and servo constants ======
 // #define SPEED_PROCENT_LIMIT 100
-#define SPEED_LIMIT 1150                // Maximum allowed motor speed [us]
+#define SPEED_LIMIT 1700                // Maximum allowed motor speed [us]
 #define SERVO_1_HOME 55 //82;          // 0 position [degrees]
 #define SERVO_2_HOME 71 //107; // 88;  // 0 position[degrees]
-#define MAX_GIMBAL 10
+#define MAX_GIMBAL 35
 
 // ====== Ground control specs ======
 #define CAL_BUTTON_DURATION 2000        // How long the botton needs to hold to enter esc calibration [ms]
@@ -84,7 +84,7 @@
 //Filter parameters - Defaults tuned for 2kHz loop rate; Do not touch unless you know what you are doing:
 #define CONTROLLER_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
 #define CALIBRATION_COUNT 10000 //20000;
-#define WARMUP_TIME 20000 //10000
+#define WARMUP_TIME 10000 //10000
 
 #define B_MADGWCIK 0.04 //0.02; //0.04;    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
 #define B_ACCEL 0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)

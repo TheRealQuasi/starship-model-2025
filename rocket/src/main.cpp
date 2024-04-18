@@ -81,32 +81,32 @@ void waitESCCalCommand() {
   // OLd implementation
   // ------------------
 
-  // // Only execute this code if the ESC is in calibration mode (never in armed mode)
-  // if (!escCalibrationStatus) {
-  //   // Wait for calibration to be granted by the pilot (holding calButton for at least 2 seconds)
-  //   unsigned long t0 = millis();
-  //   unsigned long tPress = millis();
+  // Only execute this code if the ESC is in calibration mode (never in armed mode)
+  if (!escCalibrationStatus) {
+    // Wait for calibration to be granted by the pilot (holding calButton for at least 2 seconds)
+    unsigned long t0 = millis();
+    unsigned long tPress = millis();
 
-  //   // Check for calButton press and duration off press
-  //   while (tPress - t0 < CAL_BUTTON_DURATION) {
-  //     // Check inpus
-  //     transmitData(radio, senderData, ackData, newControllerData, prevMillis);
+    // Check for calButton press and duration off press
+    while (tPress - t0 < CAL_BUTTON_DURATION) {
+      // Check inpus
+      transmitData(radio, senderData, ackData, newControllerData, prevMillis);
 
-  //     // Check calButton status
-  //     if (ackData.calButton) {
-  //       tPress = millis();
-  //     }
+      // Check calButton status
+      if (ackData.calButton) {
+        tPress = millis();
+      }
 
-  //     // Reset duration if button is not pressed
-  //     else {
-  //       t0 = millis();
-  //       tPress = millis();
-  //     }
-  //   }
+      // Reset duration if button is not pressed
+      else {
+        t0 = millis();
+        tPress = millis();
+      }
+    }
 
-  //   // When button press duration is enough, run ESC calibation
-  //   escCalibration(escCalibrationStatus);
-  // }
+    // When button press duration is enough, run ESC calibation
+    escCalibration(escCalibrationStatus);
+  }
 
 
   // Only execute this code if the ESC is in calibration mode (never in armed mode)
@@ -188,15 +188,13 @@ void setup() {
   waitESCCalCommand();
   
 
-  #ifdef DEBUG
   setServo1Pos(-MAX_GIMBAL);
-  setServo2Pos(SERVO_2_HOME);
+  setServo2Pos(-MAX_GIMBAL);
   delay(1500);    
 
-  setServo1Pos(SERVO_1_HOME);
-  setServo2Pos(SERVO_2_HOME);
+  setServo1Pos(MAX_GIMBAL);
+  setServo2Pos(MAX_GIMBAL);
   delay(1500);    
-  #endif
 
   setServo1Pos(0);
   setServo2Pos(0);
@@ -236,10 +234,16 @@ void setup() {
   #ifdef DEBUG
   Serial.println("Init complete!");
   #endif
+
+  ackData.armSwitch = true;
 }
 
 void loop() {
   // Time management
+  // if (!ackData.armSwitch) {
+  //   motorsWrite(1100, ackData);
+  // }
+
   imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
 
   // Read sensors and filter data
@@ -251,7 +255,7 @@ void loop() {
   #endif
 
   // PID altitude
-  motorSpeed = altitude_pid(tfDist, ALT_REF);
+  motorSpeed = altitude_pid(tfDist*0.01, ALT_REF);
   motorsWrite(motorSpeed, ackData);
 
   // PID angle 
@@ -259,8 +263,8 @@ void loop() {
   xGimb = angleControlX(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
 
   // Actuation
-  setServo1Pos(xGimb);
-  setServo2Pos(yGimb);
+  setServo1Pos(-xGimb);
+  setServo2Pos(-yGimb);
 
   
   //Read barometer data

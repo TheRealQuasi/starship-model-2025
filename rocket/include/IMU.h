@@ -386,8 +386,17 @@ private:
   void init_BMI088() {
     while (1) {
       if (bmi088.isConnection()) {
+        #ifdef DEBUG
+          Serial.print("bmi088 found!!!");
+        #endif
+
         bmi088.initialize();
         break;
+      }
+      else {
+        #ifdef DEBUG
+        Serial.print("Can't find bmi088 on I2C bus..........");
+        #endif
       }
       delay(1000); //2000        // <<<<<<<<<<<<<------------------Not sure if this is needed
     }

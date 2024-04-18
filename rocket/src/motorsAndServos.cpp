@@ -91,7 +91,7 @@ void motorsWrite(int speed, ControlData& ackData) {
 
   // If armed, set motor speed
   // else {
-    // Constraints
+  // Constraints
   if (speed > SPEED_LIMIT) {
     speed = SPEED_LIMIT;
   }
@@ -101,7 +101,7 @@ void motorsWrite(int speed, ControlData& ackData) {
 
   dc_motor_1.write(speed);
   dc_motor_2.write(speed);  
-    // ToDo: Here, a shoudown procedure should be called
+  // ToDo: Here, a shoudown procedure should be called
   // }
 }
 
