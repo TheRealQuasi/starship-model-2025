@@ -76,70 +76,6 @@ float motorSpeed = 1140;
 //  Functions
 // =============================================================================================
 
-// Calibration procedure called after calButton is pressed for at least 2 seconds
-void waitESCCalCommand() {
-  // OLd implementation
-  // ------------------
-
-  // Only execute this code if the ESC is in calibration mode (never in armed mode)
-  if (!escCalibrationStatus) {
-    // Wait for calibration to be granted by the pilot (holding calButton for at least 2 seconds)
-    unsigned long t0 = millis();
-    unsigned long tPress = millis();
-
-    // Check for calButton press and duration off press
-    while (tPress - t0 < CAL_BUTTON_DURATION) {
-      // Check inpus
-      transmitData(radio, senderData, ackData, newControllerData, prevMillis);
-
-      // Check calButton status
-      if (ackData.calButton) {
-        tPress = millis();
-      }
-
-      // Reset duration if button is not pressed
-      else {
-        t0 = millis();
-        tPress = millis();
-      }
-    }
-
-    // When button press duration is enough, run ESC calibation
-    escCalibration(escCalibrationStatus);
-  }
-
-
-  // Only execute this code if the ESC is in calibration mode (never in armed mode)
-  if (!escCalibrationStatus) {
-    #ifdef DEBUG
-      Serial.print("Avaiting cal button");
-    #endif
-
-    // Wait for calibration to be granted by the pilot (holding calButton for at least 2 seconds)
-    unsigned long t0 = millis();
-    unsigned long tPress = millis();
-
-    // Check for calButton press and duration off press
-    while (tPress - t0 < CAL_BUTTON_DURATION) {
-      // Check calButton status
-      if (!digitalRead(CAL_BUTTON)) {
-        tPress = millis();
-      }
-
-      // Reset duration if button is not pressed
-      else {
-        t0 = millis();
-        tPress = millis();
-      }
-    }
-
-    delay(1000);
-
-    // When button press duration is enough, run ESC calibation
-    escCalibration(escCalibrationStatus);
-  }
-}
-
 // Print the data from the ackData object
 void printAckData(){
   if(newControllerData){
@@ -175,36 +111,52 @@ void setup() {
     Serial.println("Initializing I2C bus...");
   #endif
 
+  // =================== Radio setup =====================
+
   // Initialize radio module
   // initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
 
-  // Initialize servos and ESCs (motors)
-  initServosMotors();
+
+  // =================== Servo and motor setup ===================
 
   // Configure digital input for calButton
   pinMode(CAL_BUTTON, INPUT_PULLUP);
 
-  // Wait for ESC calibration command
-  waitESCCalCommand();
+  // Initialize servos and ESCs (motors)
+  initServosMotors();
+
+  // ESC calibration phase
+  // <<<<<-----------------------------------------------------------------To do: Transmit ESC calibration phase message
+
+  // Calibrate the ESCs throttle range once calButton has been pressed for at least 2 seconds
+  waitESCCalCommand(escCalibrationStatus);
   
+  // Gimbal test phase
+  // <<<<<-----------------------------------------------------------------To do: Transmit gimbal test phase message
 
-  setServo1Pos(-MAX_GIMBAL);
-  setServo2Pos(-MAX_GIMBAL);
-  delay(1500);    
+  gimbalTest();
 
-  setServo1Pos(MAX_GIMBAL);
-  setServo2Pos(MAX_GIMBAL);
-  delay(1500);    
 
-  setServo1Pos(0);
-  setServo2Pos(0);
+  // =============== Sensor setup ===============
 
   // Initialize I2C bus
   Wire.begin();
 
-  // Initialize sensors (needs to happend in the end, to allow for continous IMU sampling)
-  imu.initIMU();
+  // Initialize IMU (needs to happend in the end, to allow for continous IMU sampling)
+  imu.init();
 
+  // IMU calibration phase
+  // <<<<<-----------------------------------------------------------------To do: Transmit IMU calibration phase message
+
+  imu.calibrate();
+
+  // Filter warmup phase
+  // <<<<<-----------------------------------------------------------------To do: Transmit filter warmup phase message
+
+  // Allow the madgwick filter to start converging on an estimate before flight
+  imu.filterWarmup();
+
+  // Barometer sensor setup
   if(!initDPS310()){
     #ifdef DEBUG
       Serial.println("Failed to initialize the pressure sensor. Check the wiring and try again.");
@@ -247,7 +199,7 @@ void loop() {
   imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
 
   // Read sensors and filter data
-  imu.imuUpdate();                          // Get IMU data and filter it with LP / smoothing and Madgwick-filters
+  imu.update();                          // Get IMU data and filter it with LP / smoothing and Madgwick-filters
   tfmP.getData( tfDist, tfFlux, tfTemp);    // Get a frame of data from the TFmini
   #ifdef DEBUG
     Serial.print("Altitude = ");

@@ -105,6 +105,20 @@ void motorsWrite(int speed, ControlData& ackData) {
   // }
 }
 
+// Gimbal test during startup (+ / - 30 degrees gimbal on both motors)
+void gimbalTest() {
+  setServo1Pos(-MAX_GIMBAL);
+  setServo2Pos(-MAX_GIMBAL);
+  delay(1500);    
+
+  setServo1Pos(MAX_GIMBAL);
+  setServo2Pos(MAX_GIMBAL);
+  delay(1500);    
+
+  setServo1Pos(0);
+  setServo2Pos(0);
+}
+
 // ====== ESC throttle calibration sequence ======
 // Sends full throttle on-time for a few seconds and then zero throttle on-time
 void escCalibration(bool &escCalibrationStatus) {           // <<<<<<-------------- To do: Link the buttom of the controller to this to support the calibration sequence
@@ -154,6 +168,40 @@ void escCalibration(bool &escCalibrationStatus) {           // <<<<<<-----------
   #endif
 
 
+}
+
+
+// Calibration procedure called after calButton is pressed for at least 2 seconds
+void waitESCCalCommand(bool &escCalibrationStatus) {
+  // Only execute this code if the ESC is in calibration mode (never in armed mode)
+  if (!escCalibrationStatus) {
+    #ifdef DEBUG
+      Serial.print("Avaiting cal button");
+    #endif
+
+    // Wait for calibration to be granted by the pilot (holding calButton for at least 2 seconds)
+    unsigned long t0 = millis();
+    unsigned long tPress = millis();
+
+    // Check for calButton press and duration off press
+    while (tPress - t0 < CAL_BUTTON_DURATION) {
+      // Check calButton status
+      if (!digitalRead(CAL_BUTTON)) {
+        tPress = millis();
+      }
+
+      // Reset duration if button is not pressed
+      else {
+        t0 = millis();
+        tPress = millis();
+      }
+    }
+
+    delay(1000);
+
+    // When button press duration is enough, run ESC calibation
+    escCalibration(escCalibrationStatus);
+  }
 }
 
 

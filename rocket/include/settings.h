@@ -29,7 +29,7 @@
 #define MOTOR_2_PIN 8  //5
 #define SERVO_1_PIN 2
 #define SERVO_2_PIN 3
-#define CAL_BUTTON  6
+#define CAL_BUTTON  37//6
 
 // // ===== Radio pin assignment =====
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)

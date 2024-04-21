@@ -90,24 +90,19 @@ public:
   }
 
   // Inits for the entire IMU object
-  void initIMU () {
+  void init () {
     #ifdef DEBUG
       Serial.print("\n IMU init started \n");
     #endif
+   
     init_BMI088();
     delay(500);
 
     start_time = millis();
-
-  // Calibration
-  // -----------
-  calculate_IMU_error_BMI088(); // 
-
-  filterIMUWarmup(); // Simulates a main loop for a few seconds (to get the madgwick filter to converge before the main loop)
   }
 
   // Gets new readings from BMI088 and sends them to the madgwick filter that estimates the attitude
-  void imuUpdate () {
+  void update () {
     getIMUdata_BMI088();
     madgwickStep();
     #ifdef DEBUG
@@ -128,6 +123,14 @@ void getAttitude(float* roll, float* pitch, float* yaw) {
     *roll = roll_IMU;
     *pitch = pitch_IMU;
     *yaw = yaw_IMU;
+}
+
+void calibrate() {
+  calculate_IMU_error_BMI088();
+}
+
+void filterWarmup() {
+  filterIMUWarmup();
 }
 
 private:
@@ -371,7 +374,7 @@ private:
       Serial.print("\n \n Warming up madgwick filter \n ------------------------ \n");
     #endif
 
-    for (int i = 0; i <= 10000; i++) {
+    for (int i = 0; i <= WARMUP_TIME; i++) {
       prev_time = current_time;      
       current_time = micros();      
       dt = (current_time - prev_time)/1000000.0; 
