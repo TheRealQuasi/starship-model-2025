@@ -324,8 +324,7 @@ void checkSignalLoss(){
 } */
 
 // Transmit the packets with data
-void transmitPacket(
-                    Packet& packet,
+void transmitPacket(Packet& packet,
                     ControlData& ackData)
 {
   if(radio.write( &packet, sizeof(packet) ))

@@ -115,18 +115,18 @@ void setup() {
   pinMode(CAL_BUTTON, INPUT_PULLUP);
 
   // Initialize servos and ESCs (motors)
+  transmitState(SERVO_AND_MOTOR_INIT, ackData);
   initServosMotors();
 
   // ESC calibration phase
-  // <<<<<-----------------------------------------------------------------To do: Transmit ESC calibration phase message
+  transmitState(ESC_CALIBRATION, ackData);  //Transmit ESC calibration phase message
 
   // Calibrate the ESCs throttle range once calButton has been pressed for at least 2 seconds
   waitESCCalCommand(escCalibrationStatus);
   
   // Gimbal test phase
-  // <<<<<-----------------------------------------------------------------To do: Transmit gimbal test phase message
-
-  gimbalTest();
+  transmitState(ESC_CALIBRATION, ackData);   //Transmit gimbal test phase message
+  gimbalTest(GIMBAL_TEST, ackData);
 
 
   // =============== Sensor setup ===============
@@ -138,12 +138,12 @@ void setup() {
   imu.init();
 
   // IMU calibration phase
-  // <<<<<-----------------------------------------------------------------To do: Transmit IMU calibration phase message
+  transmitState(IMU_CALIBRATION, ackData);    // Transmit IMU calibration phase message
 
   imu.calibrate();
 
   // Filter warmup phase
-  // <<<<<-----------------------------------------------------------------To do: Transmit filter warmup phase message
+  transmitState(FILTER_WARMUP, ackData);    // Transmit filter warmup phase message
 
   // Allow the madgwick filter to start converging on an estimate before flight
   imu.filterWarmup();
@@ -179,7 +179,10 @@ void setup() {
   Serial.println("Init complete!");
   #endif
 
-  ackData.armSwitch = true;
+
+  transmitState(SYSTEM_READY, ackData);
+
+  //ackData.armSwitch = true;
 }
 
 void loop() {
