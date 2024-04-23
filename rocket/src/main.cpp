@@ -125,8 +125,8 @@ void setup() {
   waitESCCalCommand(escCalibrationStatus);
   
   // Gimbal test phase
-  transmitState(ESC_CALIBRATION, ackData);   //Transmit gimbal test phase message
-  gimbalTest(GIMBAL_TEST, ackData);
+  transmitState(GIMBAL_TEST, ackData);   //Transmit gimbal test phase message
+  gimbalTest();
 
 
   // =============== Sensor setup ===============
