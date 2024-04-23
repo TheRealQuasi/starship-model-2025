@@ -14,6 +14,7 @@
 #include "GlobalDecRocket.h"
 #include "RadioTransceiverMaster.h"
 #include <Arduino.h>
+#include <settings.h>
 
 // #define DEBUG
 
@@ -28,6 +29,9 @@
 // Signal timeout in milli seconds. We will reset the data if no signal
 #define SIGNAL_TIMEOUT 5000 
 
+// Instantiate an object for the nRF24L01 transceiver
+RF24 radio(CE_PIN, CSN_PIN);
+
 // Let these addresses be used for the pair
 uint8_t address[][6] = { "1Node" };
 
@@ -37,11 +41,28 @@ unsigned long lastRecvTime = 0;
 // This is last time "signal lost" message was printed
 unsigned long lastSignalLostPrinted = 0;
 
+// For when to send packets
+/* unsigned long currentMillis;
+unsigned long prevTransmit = 0;
+unsigned long txIntervalMillis = 2500; */ // send once per every 250 milliseconds
+
+// Data type
+enum DataType {
+  FLIGHT_DATA = 1,
+  STATE_DATA = 2,
+  ERROR_MSG = 3
+};
+
 // Create a Packet structure to hold the data that will be received from the other node
 struct Packet {
+  byte type;
   byte sequenceNumber;
-  byte data[PACKET_SIZE - sizeof(byte)]; // subtract the size of sequenceNumber
+  byte data[PACKET_SIZE - sizeof(byte) - sizeof(byte)]; // subtract the size of type and sequenceNumber
 };
+
+/* struct DataPackets {
+  Packet packets[];
+}; */
 
 
 
@@ -70,8 +91,7 @@ struct Packet {
  * specific channel for communication. It is important to choose a channel that is not being used by
  * other devices in the vicinity to
  */
-void initRadio( RF24& radio,
-                uint8_t level, 
+void initRadio( uint8_t level, 
                 rf24_datarate_e speed,
                 uint8_t channel
                 )
@@ -145,7 +165,7 @@ void initRadio( RF24& radio,
   #endif
 
 
-  // Start handshake with ground control
+  /* // Start handshake with ground control
   #ifdef DEBUG
     Serial.println("Handshake with ground control...");
   #endif
@@ -183,7 +203,7 @@ void initRadio( RF24& radio,
     #endif
 
     delay(1000); // Wait a bit before checking again
-  }
+  } */
 }
 
 /**
@@ -225,16 +245,13 @@ void checkSignalLoss(){
  * @return The function `transmitData` returns a boolean value - `true` if the data transmission was
  * successful, and `false` if there was a failure during transmission.
  */
-bool transmitData(  RF24& radio, 
+/* bool transmitData(  RF24& radio, 
                     PacketData& dataToSend, //dataFrame, 
                     ControlData& ackData, 
                     bool& newControllerData, 
                     unsigned long& prevMillis
                     )
 {
-  /* PacketData dataToSend; // The data we want to send
-  dataToSend = dataFrame;  */
-
   // Split the data into two packets
   Packet packet1 = {1, {}};
   memcpy(packet1.data, &dataToSend, PACKET_SIZE - sizeof(byte));
@@ -253,7 +270,7 @@ bool transmitData(  RF24& radio,
   // Wait for ACK or timeout
   // Recive the acknowledge and data from ground control
   if (rslt1) {
-    if ( /* radio.isAckPayloadAvailable() */ radio.available() ) {
+    if (radio.available() ) {
       radio.read(&ackData, sizeof(ackData));
       newControllerData = true;
       #ifdef DEBUG
@@ -285,7 +302,7 @@ bool transmitData(  RF24& radio,
 
   // Recive the acknowledge and data from ground control
   if (rslt2) {
-    if ( /* radio.isAckPayloadAvailable() */ radio.available() ) {
+    if (radio.available() ) {
       radio.read(&ackData, sizeof(ackData)); // To clear FIFO
     }
     else {
@@ -304,5 +321,61 @@ bool transmitData(  RF24& radio,
 
   prevMillis = millis();
   return true;
+} */
+
+// Transmit the packets with data
+void transmitPacket(
+                    Packet& packet,
+                    ControlData& ackData)
+{
+  if(radio.write( &packet, sizeof(packet) ))
+  {
+    if (radio.available()) {
+      radio.read(&ackData, sizeof(ackData));
+    }
+  }
+  else {
+    #ifdef DEBUG
+      Serial.println("  Tx failed");
+    #endif
+    //checkSignalLoss();
+  }
 }
+
+//Transmit flightdata
+void transmitFlightData(PacketData& dataToSend, ControlData& ackData)
+{
+  // Split the data into two packets
+  Packet packet1 = {FLIGHT_DATA, 1, {}};
+  memcpy(packet1.data, &dataToSend, PACKET_SIZE - sizeof(byte) - sizeof(byte));
+
+  Packet packet2 = {FLIGHT_DATA, 2, {}};
+  size_t packet2DataSize = sizeof(PacketData) - (PACKET_SIZE - sizeof(byte) - sizeof(byte));
+  memcpy(packet2.data, ((byte*)&dataToSend) + (PACKET_SIZE - sizeof(byte) - sizeof(byte)), packet2DataSize);
+  
+  // Send the first packet
+  transmitPacket(packet1, ackData);
+
+  // Send the second packet
+  transmitPacket(packet2, ackData);
+}
+
+//Transmit state
+void transmitState(States state, ControlData& ackData)
+{
+  Packet packet = {STATE_DATA, 1, {}};
+  memcpy(packet.data, &state, sizeof(state));
+
+  transmitPacket(packet, ackData);
+}
+
+//Transmit error message
+/* void transmitErrorMsg(Errors errCode, ControlData& ackData)
+{
+  Packet packet = {ERROR_MSG, 1, {}};
+  memcpy(packet.data, &errCode, sizeof(errCode));
+
+  transmitPacket(packet, ackData);
+} */
+
 

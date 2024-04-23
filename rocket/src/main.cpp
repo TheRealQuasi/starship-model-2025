@@ -30,16 +30,8 @@
 //  Variables/Objects
 // =============================================================================================
 
-// Instantiate an object for the nRF24L01 transceiver
-RF24 radio(CE_PIN, CSN_PIN);
-
 // Indicateds if there is new data to be read from the radio
 bool newControllerData = false;
-
-// For when to send packets
-unsigned long currentMillis;
-unsigned long prevMillis = 0;
-unsigned long txIntervalMillis = 50; // send once per every 250 milliseconds
 
 // Create a Packet to hold the data
 PacketData senderData;
@@ -114,7 +106,7 @@ void setup() {
   // =================== Radio setup =====================
 
   // Initialize radio module
-  // initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
+  initRadio(RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
 
 
   // =================== Servo and motor setup ===================
@@ -264,6 +256,8 @@ void loop() {
   //   }
   //   prevMillis = currentMillis;
   // }
+
+  transmitFlightData(senderData, ackData);
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
   imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.

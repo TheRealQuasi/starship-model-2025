@@ -38,5 +38,14 @@ struct SensorData {
   float psHeight; // Height from ground (Pressure sensor)
 };
 
+enum States {
+  SERVO_AND_MOTOR_INIT,
+  ESC_CALIBRATION,
+  GIMBAL_TEST,
+  IMU_CALIBRATION,
+  FILTER_WARMUP,
+  SYSTEM_READY
+};
+
 
 #endif
