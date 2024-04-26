@@ -23,12 +23,16 @@
 #include "Barometer.h"
 #include "PID_ang_new.h"
 #include "PID_altitude_new.h"
+#include <SD.h>
 
 
 
 // =============================================================================================
 //  Variables/Objects
 // =============================================================================================
+
+// Store data on SD card
+File dataFile;
 
 // Indicateds if there is new data to be read from the radio
 bool newControllerData = false;
@@ -81,6 +85,44 @@ void printAckData(){
     Serial.print("  Armed: ");
     Serial.println(ackData.armSwitch);
     newControllerData = false;
+  }
+}
+
+void write2SD(){
+  // Open the file. Note that only one file can be open at a time,
+  // so you have to close this one before opening another.
+  dataFile = SD.open("rocketData.csv", FILE_WRITE);
+
+  // If the file is available, write to it:
+  if (dataFile) {
+    dataFile.print(senderData.timeStamp);
+    dataFile.print(",");
+    dataFile.print(senderData.posXValue);
+    dataFile.print(",");
+    dataFile.print(senderData.posYValue);
+    dataFile.print(",");
+    dataFile.print(senderData.posZValue);
+    dataFile.print(",");
+    dataFile.print(senderData.accXValue);
+    dataFile.print(",");
+    dataFile.print(senderData.accYValue);
+    dataFile.print(",");
+    dataFile.print(senderData.accZValue);
+    dataFile.print(",");
+    dataFile.print(senderData.gamValue);
+    dataFile.print(",");
+    dataFile.print(senderData.accGamValue);
+    dataFile.print(",");
+    dataFile.print(senderData.betaValue);
+    dataFile.print(",");
+    dataFile.println(senderData.accBetaValue);
+    dataFile.close();
+  }
+  // If the file isn't open, pop up an error:
+  else {
+    #ifdef DEBUG
+      Serial.println("error opening data.csv");
+    #endif
   }
 }
 
@@ -179,6 +221,7 @@ void setup() {
   Serial.println("Init complete!");
   #endif
 
+  SD.begin(BUILTIN_SDCARD);
 
   transmitState(SYSTEM_READY, ackData);
 
@@ -261,6 +304,8 @@ void loop() {
   // }
 
   transmitFlightData(senderData, ackData);
+
+  write2SD();
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
   imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
