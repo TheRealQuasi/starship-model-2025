@@ -22,13 +22,13 @@ double rot_previous_error;
 //PID constants-------------------------------------------------------------------------------------
 
 // pitch pid gain values
-double tv_pitch_Kp = 3.000;
+double tv_pitch_Kp = 1;//3.000;
 double tv_pitch_Ki = 0.0;//0.080;
-double tv_pitch_Kd = 55.00;
+double tv_pitch_Kd = 10; //55.00;
 
-double tv_stability_Kp = 3.000;
+double tv_stability_Kp =1; //3.000;
 double tv_stability_Ki = 0.0;//0.080;
-double tv_stability_Kd = 55.00;
+double tv_stability_Kd = 10;//55.00;
 
 
 //PID controllers----------------------------------------------------------------------------------

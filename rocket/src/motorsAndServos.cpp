@@ -82,27 +82,45 @@ int speedMapping(int thrustLevel) {                  // <<<<<<<<<---------------
 // Sets PWM on-time in [micro-seconds]
 void motorsWrite(int speed, ControlData& ackData) {
   // Check arming status, set speed to zero in case unarmed
-  // if(!(ackData.armSwitch)) {                                 // <<<<<<<<<-------This armed check might need tweaking to prevent shutdown mid air
-  //   dc_motor_1.write(1100);
-  //   dc_motor_2.write(1100);
+  if(!(ackData.armSwitch)) {                                 // <<<<<<<<<-------This armed check might need tweaking to prevent shutdown mid air
+    dc_motor_1.write(1100);
+    dc_motor_2.write(1100);
     
   //   // ToDo: Here, a shoudown procedure should be called
-  // }
+  }
 
   // If armed, set motor speed
-  // else {
-  // Constraints
-  if (speed > SPEED_LIMIT) {
-    speed = SPEED_LIMIT;
-  }
-  if (speed < 1100) {
-    speed = 1100;
-  }
+  else {
+    // Constraints
+    if (speed > SPEED_LIMIT) {
+      speed = SPEED_LIMIT;
+    }
+    if (speed < 1100) {
+      speed = 1100;
+    }
 
-  dc_motor_1.write(speed);
-  dc_motor_2.write(speed);  
-  // ToDo: Here, a shoudown procedure should be called
-  // }
+    // // ToDo: slider mapping
+    // int sliderMapped = ackData.thrustSlider;
+
+    // if (sliderMapped <= 5) {
+    //   sliderMapped = 0;
+    // }
+    
+    // if (sliderMapped >= 250) {
+    //   sliderMapped = 255;
+    // }
+    
+    // sliderMapped = map(ackData.thrustSlider, 0, 255, 1100, 1940); 
+
+    // // Slider constraints
+    // if (speed > sliderMapped) {
+    //   speed = sliderMapped;
+    // }
+
+    dc_motor_1.write(speed);
+    dc_motor_2.write(speed);  
+    // ToDo: Here, a shoudown procedure should be called
+    }
 }
 
 // Gimbal test during startup (+ / - 30 degrees gimbal on both motors)

@@ -13,6 +13,9 @@
 // =================================================================
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 // #define DEBUG
+#define DISABLE_COM
+#define TIME_LIMIT 4000
+
 // =================================================================
 
 
@@ -30,6 +33,7 @@
 #define SERVO_1_PIN 2
 #define SERVO_2_PIN 3
 #define CAL_BUTTON  37//6
+#define LED_PIN     41 
 
 // // ===== Radio pin assignment =====
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
@@ -44,10 +48,10 @@
 
 // ====== Motor and servo constants ======
 // #define SPEED_PROCENT_LIMIT 100
-#define SPEED_LIMIT 1700                // Maximum allowed motor speed [us]
+#define SPEED_LIMIT 1750                // Maximum allowed motor speed [us]
 #define SERVO_1_HOME 55 //82;          // 0 position [degrees]
 #define SERVO_2_HOME 71 //107; // 88;  // 0 position[degrees]
-#define MAX_GIMBAL 35
+#define MAX_GIMBAL 15
 
 // ====== Ground control specs ======
 #define CAL_BUTTON_DURATION 2000        // How long the botton needs to hold to enter esc calibration [ms]
@@ -84,11 +88,11 @@
 //Filter parameters - Defaults tuned for 2kHz loop rate; Do not touch unless you know what you are doing:
 #define CONTROLLER_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
 #define CALIBRATION_COUNT 10000 //20000;
-#define WARMUP_TIME 10000 //10000
+#define WARMUP_TIME 15000//20000 //10000
 
 #define B_MADGWCIK 0.04 //0.02; //0.04;    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
-#define B_ACCEL 0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
-#define B_GYRO 0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
+#define B_ACCEL 0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
+#define B_GYRO 0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
 
 
 // ====== Pressure sensor configuration ======

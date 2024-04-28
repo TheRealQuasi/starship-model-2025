@@ -23,6 +23,7 @@
 #include "Barometer.h"
 #include "PID_ang_new.h"
 #include "PID_altitude_new.h"
+#include "LQR.h"
 #include <SD.h>
 
 
@@ -46,27 +47,44 @@ ControlData ackData;
 // Store sensor data
 SensorData sensorData;
 
+// Store control data
+LQR_outputs lqrOutputs;
+
+
 // ========= Status variables =========
 bool escCalibrationStatus = false;  // Boolean that informs if ESC calibration is performed or not
 
 // ========= IMU =========
 // IMU object
-// Objects handeling everything with the BMI088 paired with a madgwick filter
+// Object handeling everything with the BMI088 paired with a madgwick filter
 Imu6DOF imu;
 
 // ========= Lidar =========
 TFMPI2C tfmP;         // Create a TFMini-Plus I2C object
 
 // Variables storing data from TFmini plus
-int16_t tfDist = 0;       // Distance to object in centimeters
-int16_t tfFlux = 0;       // Signal strength or quality of return signal
-int16_t tfTemp = 0;       // Internal temperature of Lidar sensor chip
+int16_t lidarZ = 0;       // Distance to object in centimeters
+int16_t lidarFlux = 0;       // Signal strength or quality of return signal
+int16_t lidarTemp = 0;       // Internal temperature of Lidar sensor chip
 
+int16_t zPrev = 0;       // Distance to object in centimeters
 
 // Servo control variables
 float xGimb = 0;
 float yGimb = 0;
 float motorSpeed = 1140;
+
+
+// Time variables
+int t0;
+int t1;
+int tLqr;
+
+// Delta-states
+float xDot = 0;
+float yDot = 0;
+float zDot = 0;
+
 
 // =============================================================================================
 //  Functions
@@ -127,7 +145,6 @@ void write2SD(){
 }
 
 
-
 // =============================================================================================
 //  Main Program
 // =============================================================================================
@@ -148,8 +165,9 @@ void setup() {
   // =================== Radio setup =====================
 
   // Initialize radio module
-  initRadio(RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
-
+  #ifndef DISABLE_COM
+    initRadio(RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL);
+  #endif
 
   // =================== Servo and motor setup ===================
 
@@ -157,18 +175,28 @@ void setup() {
   pinMode(CAL_BUTTON, INPUT_PULLUP);
 
   // Initialize servos and ESCs (motors)
-  transmitState(SERVO_AND_MOTOR_INIT, ackData);
+  #ifndef DISABLE_COM
+    transmitState(SERVO_AND_MOTOR_INIT, ackData);
+  #endif
+
   initServosMotors();
 
   // ESC calibration phase
-  transmitState(ESC_CALIBRATION, ackData);  //Transmit ESC calibration phase message
+  #ifndef DISABLE_COM
+    transmitState(ESC_CALIBRATION, ackData);  //Transmit ESC calibration phase message
+  #endif
 
   // Calibrate the ESCs throttle range once calButton has been pressed for at least 2 seconds
   waitESCCalCommand(escCalibrationStatus);
   
   // Gimbal test phase
-  transmitState(GIMBAL_TEST, ackData);   //Transmit gimbal test phase message
+  #ifndef DISABLE_COM
+    transmitState(GIMBAL_TEST, ackData);   //Transmit gimbal test phase message
+  #endif
+
   gimbalTest();
+
+  lqrInit();
 
 
   // =============== Sensor setup ===============
@@ -180,22 +208,25 @@ void setup() {
   imu.init();
 
   // IMU calibration phase
-  transmitState(IMU_CALIBRATION, ackData);    // Transmit IMU calibration phase message
-
+  #ifndef DISABLE_COM
+    transmitState(IMU_CALIBRATION, ackData);    // Transmit IMU calibration phase message
+  #endif
   imu.calibrate();
 
   // Filter warmup phase
-  transmitState(FILTER_WARMUP, ackData);    // Transmit filter warmup phase message
+  #ifndef DISABLE_COM
+    transmitState(FILTER_WARMUP, ackData);    // Transmit filter warmup phase message
+  #endif
 
   // Allow the madgwick filter to start converging on an estimate before flight
   imu.filterWarmup();
 
-  // Barometer sensor setup
-  if(!initDPS310()){
-    #ifdef DEBUG
-      Serial.println("Failed to initialize the pressure sensor. Check the wiring and try again.");
-    #endif
-  }
+  // // Barometer sensor setup
+  // if(!initDPS310()){
+  //   #ifdef DEBUG
+  //     Serial.println("Failed to initialize the pressure sensor. Check the wiring and try again.");
+  //   #endif
+  // }
 
   // Initialize the senderData object
   senderData.timeStamp = 0;
@@ -211,7 +242,7 @@ void setup() {
   senderData.accBetaValue = 0.0;
 
   // Initialize the ackData object
-  ackData.armSwitch = 0;
+  // ackData.armSwitch = 0;
   ackData.calButton = 0;
   ackData.thrustSlider = 0;
   ackData.lxAxisValue = 0;
@@ -223,40 +254,102 @@ void setup() {
 
   SD.begin(BUILTIN_SDCARD);
 
-  transmitState(SYSTEM_READY, ackData);
+  #ifndef DISABLE_COM
+    transmitState(SYSTEM_READY, ackData);
+  #endif
 
-  //ackData.armSwitch = true;
+  ackData.armSwitch = true;
+
+  gimbalTest();
+
+  // Set start time
+  t0 = millis();
+  t1 = millis();
+
+  tLqr = millis();
+
 }
+
+
+// =======================================
+// ===============MAIN LOOP===============
+// =======================================
+
 
 void loop() {
   // Time management
-  // if (!ackData.armSwitch) {
-  //   motorsWrite(1100, ackData);
-  // }
+
+  Serial.print("\t");
+  Serial.print(t1);
+
+  if (t1 - t0 >= TIME_LIMIT) {
+    motorsWrite(1100, ackData);
+    Serial.print("\nABORT!!!!!!!");
+    delay(100000);
+  }
+  else {
+    t1 = millis();
+  }
+  
+  #ifndef DISABLE_COM
+    if (!ackData.armSwitch) {
+      motorsWrite(1100, ackData);
+    }
+  #endif
+
+  #ifdef DISABLE_COM
+    if (!digitalRead(CAL_BUTTON)) {
+      ackData.armSwitch = false;
+      motorsWrite(1100, ackData);
+      delay(100000);    
+    }
+  #endif
 
   imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
 
   // Read sensors and filter data
   imu.update();                          // Get IMU data and filter it with LP / smoothing and Madgwick-filters
-  tfmP.getData( tfDist, tfFlux, tfTemp);    // Get a frame of data from the TFmini
+  zPrev = lidarZ;
+  tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+  
+
   #ifdef DEBUG
     Serial.print("Altitude = ");
-    Serial.print(tfDist);
+    Serial.print(lidarZ);   
   #endif
 
+
+  // ===========================================
+  // ================ Control ==================
+  // ===========================================
+
+  // =============== PID =================
   // PID altitude
-  motorSpeed = altitude_pid(tfDist*0.01, ALT_REF);
-  motorsWrite(motorSpeed, ackData);
+  // motorSpeed = altitude_pid(lidarZ*0.01, ALT_REF);
+  // Serial.println(motorSpeed);
 
   // PID angle 
-  yGimb = angleControlY(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
-  xGimb = angleControlX(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
+  // yGimb = angleControlY(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
+  // xGimb = angleControlX(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
 
+  // =============== LQR =================
+
+  // Preliminary, rough estimations of the missing states
+  // To-do (kalman estimator)
+  xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
+  yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
+  zDot = (lidarZ - zPrev)/imu.dt;
+
+  lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, lidarZ, zDot, t0, lqrOutputs);
+  
   // Actuation
+  motorsWrite(motorSpeed, ackData);
   setServo1Pos(-xGimb);
   setServo2Pos(-yGimb);
 
   
+
+
   //Read barometer data
   /* float psReturn = readPS();
   if (psReturn == (-2)){
@@ -303,7 +396,10 @@ void loop() {
   //   prevMillis = currentMillis;
   // }
 
-  transmitFlightData(senderData, ackData);
+
+  #ifndef DISABLE_COM
+    transmitFlightData(senderData, ackData);
+  #endif
 
   write2SD();
 

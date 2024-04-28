@@ -36,7 +36,7 @@ BMI088::BMI088( unsigned short acc_addr = BMI088_ACC_ADDRESS, unsigned short gyr
 
 void BMI088::initialize(void) {
     setAccScaleRange(RANGE_6G);
-    setAccOutputDataRate(ODR_100);
+    setAccOutputDataRate(ODR_1600);
     setAccPoweMode(ACC_ACTIVE);
 
     setGyroScaleRange(RANGE_2000);

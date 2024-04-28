@@ -27,7 +27,7 @@ struct PacketData
 };
 
 struct ControlData {
-  byte armSwitch;     // Arm switch status
+  bool armSwitch;     // Arm switch status
   byte calButton;     // Calibration button status  <<<<<<<<<---------- (Gunnar): Added variable for calButton
   byte thrustSlider;  // 0-255
   byte lxAxisValue;   // 0-255
@@ -39,13 +39,21 @@ struct SensorData {
 };
 
 enum States {
-  SERVO_AND_MOTOR_INIT,
-  ESC_CALIBRATION,
-  GIMBAL_TEST,
-  IMU_CALIBRATION,
-  FILTER_WARMUP,
-  SYSTEM_READY
+  SERVO_AND_MOTOR_INIT = 1,
+  ESC_CALIBRATION = 2,
+  GIMBAL_TEST = 3,
+  IMU_CALIBRATION = 4,
+  FILTER_WARMUP = 5,
+  SYSTEM_READY = 6
 };
+
+// LQR control outputs
+struct LQR_outputs {
+  float thrust = 0;
+  float gimb1 = 0;
+  float gimb2 = 0;
+};
+
 
 
 #endif

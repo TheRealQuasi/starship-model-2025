@@ -394,11 +394,20 @@ private:
         #endif
 
         bmi088.initialize();
+
+        // Set specific IMU settings
+        bmi088.setAccScaleRange(RANGE_6G);
+        bmi088.setAccOutputDataRate(ODR_1600);
+
+        bmi088.setGyroScaleRange(RANGE_2000);
+        bmi088.setGyroOutputDataRate(ODR_2000_BW_532);
+
+
         break;
       }
       else {
         #ifdef DEBUG
-        Serial.print("Can't find bmi088 on I2C bus..........");
+        Serial.print("Can't find bmi088 on I2C bus..........\n");
         #endif
       }
       delay(1000); //2000        // <<<<<<<<<<<<<------------------Not sure if this is needed
