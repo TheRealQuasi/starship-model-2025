@@ -8,12 +8,6 @@
 #include <GlobalDecRocket.h>
 #include <BasicLinearAlgebra.h>
 
-// int c;
-
-// float time_array[1001];
-// float zref[1001];
-// float zdotref[1001];
-
 // Inits
 void lqrInit();
 void get_tradj_ref(float current_time);
