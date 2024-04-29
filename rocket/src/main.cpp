@@ -80,6 +80,8 @@ float t0;
 float tTerminate;
 float t0Lqr;
 float t1Lqr;
+float tCheck0 = 0;
+float tCheck1 = 0;
 
 // Delta-states
 float xDot = 0;
@@ -333,6 +335,9 @@ void setup() {
 
   t0Lqr = micros();
   t1Lqr = micros();
+
+  tCheck0 = 0;
+  tCheck1 = 0;
 }
 
 
@@ -343,6 +348,7 @@ void setup() {
 
 void loop() {
   // =============== Time / frequency management =================
+  tCheck0 = micros();
   imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
 
   // =============== Safety checks =================
@@ -453,7 +459,7 @@ void loop() {
   // Regulate at predefined frequency
   if (t1Lqr - t0Lqr >= (1/CONTROLLER_FREQUENCY)) {
     // Calculate current time (passed since t0)
-    float currentTime = (t0 - micros()) / pow(10.0, 6);
+    float currentTime = (micros() - t0) / pow(10.0, 6);
     senderData.timeStamp = currentTime;
 
     lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, lidarZ, zDot, currentTime, lqrSignals);
@@ -509,4 +515,11 @@ void loop() {
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
   imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
+  
+  tCheck1 = micros();
+  #ifdef DEBUG
+    if((tCheck1 - tCheck0) / pow(10, 6) > 0.00051) {
+      Serial.print(tCheck1 - tCheck0)
+    }
+  #endif
 }
