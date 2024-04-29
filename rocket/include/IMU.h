@@ -40,7 +40,7 @@ public:
   int16_t temp = 0;
 
   // Time management
-  int freq = CONTROLLER_FREQUENCY;   // Frequency of the madgwick filter
+  int freq = MADGWICK_FREQUENCY;   // Frequency of the madgwick filter
   float dt;                          // Stores dt that is required in the madgwick method
   unsigned long prev_time;
   unsigned long start_time, current_time;

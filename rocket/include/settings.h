@@ -86,7 +86,8 @@
 // BMI088 settings
 
 //Filter parameters - Defaults tuned for 2kHz loop rate; Do not touch unless you know what you are doing:
-#define CONTROLLER_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
+#define MADGWICK_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
+#define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
 #define CALIBRATION_COUNT 10000 //20000;
 #define WARMUP_TIME 15000//20000 //10000
 

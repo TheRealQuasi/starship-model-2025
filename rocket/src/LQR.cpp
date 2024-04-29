@@ -95,9 +95,9 @@ void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2,
     // Calculate control singals
     U = K * error;
 
-    // int F  = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
+    // int thrust = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
 
-    lqrOutputs.thrust = U(1);
+    lqrOutputs.motorSpeed = U(1);
     lqrOutputs.gimb1 = U(2);
     lqrOutputs.gimb2 = U(3);
 }

@@ -78,7 +78,8 @@ float motorSpeed = 1140;
 // Time variables
 int t0;
 int t1;
-int tLqr;
+int t0Lqr;
+int t1Lqr;
 
 // Delta-states
 float xDot = 0;
@@ -113,27 +114,57 @@ void write2SD(){
 
   // If the file is available, write to it:
   if (dataFile) {
+    // dataFile.print(senderData.timeStamp);
+    // dataFile.print(",");
+    // dataFile.print(senderData.posXValue);
+    // dataFile.print(",");
+    // dataFile.print(senderData.posYValue);
+    // dataFile.print(",");
+    // dataFile.print(senderData.posZValue);
+    // dataFile.print(",");
+    // dataFile.print(senderData.accXValue);
+    // dataFile.print(",");
+    // dataFile.print(senderData.accYValue);
+    // dataFile.print(",");
+    // dataFile.print(senderData.accZValue);
+    // dataFile.print(",");
+    // dataFile.print(senderData.gamValue);
+    // dataFile.print(",");
+    // dataFile.print(senderData.accGamValue);
+    // dataFile.print(",");
+    // dataFile.print(senderData.betaValue);
+    // dataFile.print(",");
+    // dataFile.println(senderData.accBetaValue);
+    // dataFile.close();
+
+    // Time stamp
     dataFile.print(senderData.timeStamp);
     dataFile.print(",");
-    dataFile.print(senderData.posXValue);
+
+  // State variables (x)
+    dataFile.print(senderData.xDot);
     dataFile.print(",");
-    dataFile.print(senderData.posYValue);
+    dataFile.print(senderData.roll);
     dataFile.print(",");
-    dataFile.print(senderData.posZValue);
+    dataFile.print(senderData.rollDot);
     dataFile.print(",");
-    dataFile.print(senderData.accXValue);
+    dataFile.print(senderData.yDot);
     dataFile.print(",");
-    dataFile.print(senderData.accYValue);
+    dataFile.print(senderData.pitch);
     dataFile.print(",");
-    dataFile.print(senderData.accZValue);
+    dataFile.print(senderData.pitchDot);
     dataFile.print(",");
-    dataFile.print(senderData.gamValue);
+    dataFile.print(senderData.z);
     dataFile.print(",");
-    dataFile.print(senderData.accGamValue);
+    dataFile.print(senderData.zDot);
     dataFile.print(",");
-    dataFile.print(senderData.betaValue);
+
+    // Control output values
+    dataFile.print(senderData.motorSpeed);
     dataFile.print(",");
-    dataFile.println(senderData.accBetaValue);
+    dataFile.println(senderData.gimb1);
+    dataFile.print(",");
+    dataFile.println(senderData.gimb2);
     dataFile.close();
   }
   // If the file isn't open, pop up an error:
@@ -229,17 +260,20 @@ void setup() {
   // }
 
   // Initialize the senderData object
-  senderData.timeStamp = 0;
-  senderData.posXValue = 0.0;
-  senderData.posYValue = 0.0;
-  senderData.posZValue = 0.0;
-  senderData.accXValue = 0.0;
-  senderData.accYValue = 0.0;
-  senderData.accZValue = 0.0;
-  senderData.gamValue = 0.0;
-  senderData.accGamValue = 0.0;
-  senderData.betaValue = 0.0;
-  senderData.accBetaValue = 0.0;
+  // senderData.timeStamp = 0;
+  // senderData.posXValue = 0.0;
+  // senderData.posYValue = 0.0;
+  // senderData.posZValue = 0.0;
+  // senderData.accXValue = 0.0;
+  // senderData.accYValue = 0.0;
+  // senderData.accZValue = 0.0;
+  // senderData.gamValue = 0.0;
+  // senderData.accGamValue = 0.0;
+  // senderData.betaValue = 0.0;
+  // senderData.accBetaValue = 0.0;
+
+  // Initialize the senderData object
+  senderData = {0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   // Initialize the ackData object
   // ackData.armSwitch = 0;
@@ -266,8 +300,8 @@ void setup() {
   t0 = millis();
   t1 = millis();
 
-  tLqr = millis();
-
+  t0Lqr = millis();
+  t1Lqr = millis();
 }
 
 
@@ -277,15 +311,17 @@ void setup() {
 
 
 void loop() {
-  // Time management
-
-  Serial.print("\t");
-  Serial.print(t1);
+  // =============== Time / frequency management =================
+  imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
+  // Serial.print("\t");
+  // Serial.print(t1);
 
   if (t1 - t0 >= TIME_LIMIT) {
     motorsWrite(1100, ackData);
-    Serial.print("\nABORT!!!!!!!");
-    delay(100000);
+    #ifdef DEBUG
+      Serial.print("\nABORT!!!!!!!");
+    #endif
+    delay(200000);
   }
   else {
     t1 = millis();
@@ -305,52 +341,21 @@ void loop() {
     }
   #endif
 
-  imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
+  // ======================================================
+  // ================ Sensors and filters =================
+  // ======================================================
 
   // Read sensors and filter data
   imu.update();                          // Get IMU data and filter it with LP / smoothing and Madgwick-filters
   zPrev = lidarZ;
   tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
   
-
   #ifdef DEBUG
     Serial.print("Altitude = ");
     Serial.print(lidarZ);   
   #endif
 
-
-  // ===========================================
-  // ================ Control ==================
-  // ===========================================
-
-  // =============== PID =================
-  // PID altitude
-  // motorSpeed = altitude_pid(lidarZ*0.01, ALT_REF);
-  // Serial.println(motorSpeed);
-
-  // PID angle 
-  // yGimb = angleControlY(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
-  // xGimb = angleControlX(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
-
-  // =============== LQR =================
-
-  // Preliminary, rough estimations of the missing states
-  // To-do (kalman estimator)
-  xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
-  yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
-  zDot = (lidarZ - zPrev)/imu.dt;
-
-  lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, lidarZ, zDot, t0, lqrOutputs);
-  
-  // Actuation
-  motorsWrite(motorSpeed, ackData);
-  setServo1Pos(-xGimb);
-  setServo2Pos(-yGimb);
-
-  
-
-
-  //Read barometer data
+  // Read barometer data
   /* float psReturn = readPS();
   if (psReturn == (-2)){
     #ifdef DEBUG
@@ -372,7 +377,50 @@ void loop() {
     sensorData.psHeight = psReturn;
   } */
 
-  //delay(240); // Delay for 1 second (1000 milliseconds)
+  // Preliminary, rough estimations of the missing states
+  // To-do (kalman estimator)
+  xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
+  yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
+  zDot = (lidarZ - zPrev)/imu.dt;
+
+  // Store new state values in senderData struct
+  senderData.xDot      = xDot;
+  senderData.roll      = imu.roll_IMU;
+  senderData.rollDot   = imu.GyroX;
+  senderData.yDot      = yDot;
+  senderData.pitch     = imu.pitch_IMU; 
+  senderData.pitchDot  = imu.GyroY; 
+  senderData.z         = lidarZ;
+  senderData.zDot      = zDot;
+
+  // ===========================================
+  // ================ Control ==================
+  // ===========================================
+
+  // =============== PID =================
+  // PID altitude
+  // motorSpeed = altitude_pid(lidarZ*0.01, ALT_REF);
+  // Serial.println(motorSpeed);
+
+  // PID angle 
+  // yGimb = angleControlY(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
+  // xGimb = angleControlX(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
+
+  // PID actuation
+  // motorsWrite(motorSpeed, ackData);
+
+  // =============== LQR =================
+  lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, lidarZ, zDot, t0, lqrOutputs);
+  
+  // Actuation
+  motorsWrite(lqrOutputs.motorSpeed, ackData);
+  setServo1Pos(-xGimb);
+  setServo2Pos(-yGimb);
+
+  // Store control outputs in senderData struct
+  senderData.motorSpeed = lqrOutputs.motorSpeed;
+  senderData.gimb1 = lqrOutputs.gimb1;
+  senderData.gimb1 = lqrOutputs.gimb1;
 
   // Ground control
   // --------------

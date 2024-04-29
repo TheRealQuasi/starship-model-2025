@@ -13,17 +13,34 @@
 
 struct PacketData
 {
-  byte timeStamp;
-  float posXValue;
-  float posYValue;
-  float posZValue;
-  float accXValue;
-  float accYValue; 
-  float accZValue; 
-  float gamValue;
-  float accGamValue;
-  float betaValue;
-  float accBetaValue; 
+  // byte timeStamp;
+  // float posXValue;
+  // float posYValue;
+  // float posZValue;
+  // float accXValue;
+  // float accYValue; 
+  // float accZValue; 
+  // float gamValue;
+  // float accGamValue;
+  // float betaValue;
+  // float accBetaValue; 
+
+  unsigned long timeStamp;
+
+  // State variables (x)
+  float xDot;
+  float roll;    // xRot
+  float rollDot;
+  float yDot;    // yRot
+  float pitch; 
+  float pitchDot; 
+  float z;
+  float zDot;
+
+  // Control output values
+  float motorSpeed;
+  float gimb1;
+  float gimb2;
 };
 
 struct ControlData {
@@ -36,6 +53,16 @@ struct ControlData {
 
 struct SensorData {
   float psHeight; // Height from ground (Pressure sensor)
+
+  // // State variables (x)
+  // float xDot;
+  // float roll; // xRot
+  // float rollDot;
+  // float yDot;
+  // float pitch; 
+  // float pitchDot; 
+  // float z;
+  // float zDot;
 };
 
 enum States {
@@ -49,7 +76,7 @@ enum States {
 
 // LQR control outputs
 struct LQR_outputs {
-  float thrust = 0;
+  float motorSpeed = 0; // Motorspeed in % of max RPM
   float gimb1 = 0;
   float gimb2 = 0;
 };

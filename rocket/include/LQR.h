@@ -1,3 +1,12 @@
+// ==================================
+// ========= LQR (Header) ===========
+// ==================================
+
+/*
+ *
+* By Gunnar and Nicholas
+*/
+
 #pragma once
 
 #ifndef LQR_H
@@ -13,4 +22,4 @@ void lqrInit();
 void get_tradj_ref(float current_time);
 void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2, float gamma2_dot, float z, float z_dot, float t0, LQR_outputs lqrOutputs);
 
-#endif // LQR_H
+#endif
