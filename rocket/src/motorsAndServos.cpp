@@ -86,7 +86,8 @@ void motorsWrite(int speed, ControlData& ackData) {
     dc_motor_1.write(1100);
     dc_motor_2.write(1100);
     
-  //   // ToDo: Here, a shoudown procedure should be called
+    //   // ToDo: Here, a shoudown procedure should be called
+    delay(200000);
   }
 
   // If armed, set motor speed
@@ -135,6 +136,25 @@ void gimbalTest() {
 
   setServo1Pos(0);
   setServo2Pos(0);
+}
+
+// Brief test of BLCD motors at low RPM
+void motorTest() {
+  // LED warning
+
+  // Test of motor 1
+  dc_motor_1.write(1150);
+  delay(500);
+
+  dc_motor_1.write(1100);
+  delay(500);
+
+  // Test of motor 1
+  dc_motor_2.write(1150);
+  delay(500);
+
+  dc_motor_2.write(1100);
+  delay(500);
 }
 
 // ====== ESC throttle calibration sequence ======

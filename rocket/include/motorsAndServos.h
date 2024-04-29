@@ -29,6 +29,8 @@ void motorsWrite(int s, ControlData& ackData);
 
 void gimbalTest();
 
+void motorTest();
+
 void escCalibration(bool &escCalibrationStatus);
 
 void waitESCCalCommand(bool &escCalibrationStatus);

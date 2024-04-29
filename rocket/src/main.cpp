@@ -48,7 +48,7 @@ ControlData ackData;
 SensorData sensorData;
 
 // Store control data
-LQR_outputs lqrOutputs;
+LqrSignals lqrSignals;
 
 
 // ========= Status variables =========
@@ -76,10 +76,10 @@ float motorSpeed = 1140;
 
 
 // Time variables
-int t0;
-int t1;
-int t0Lqr;
-int t1Lqr;
+float t0;
+float tTerminate;
+float t0Lqr;
+float t1Lqr;
 
 // Delta-states
 float xDot = 0;
@@ -159,6 +159,13 @@ void write2SD(){
     dataFile.print(senderData.zDot);
     dataFile.print(",");
 
+    // Control reference values
+    dataFile.print(senderData.zRef);
+    dataFile.print(",");
+    dataFile.print(senderData.zDotRef);
+    dataFile.print(",");
+
+
     // Control output values
     dataFile.print(senderData.motorSpeed);
     dataFile.print(",");
@@ -172,6 +179,15 @@ void write2SD(){
     #ifdef DEBUG
       Serial.println("error opening data.csv");
     #endif
+  }
+}
+
+void redLedWarning() {
+  for (int i=0; i<BLINK_COUNT; i++) {
+    digitalWrite(RED_LED_PIN, HIGH);
+    delay(250);
+    digitalWrite(RED_LED_PIN, LOW);
+    delay(250);
   }
 }
 
@@ -205,6 +221,9 @@ void setup() {
   // Configure digital input for calButton
   pinMode(CAL_BUTTON, INPUT_PULLUP);
 
+  // Configure digital putput for red led
+  pinMode(RED_LED_PIN, OUTPUT);
+  
   // Initialize servos and ESCs (motors)
   #ifndef DISABLE_COM
     transmitState(SERVO_AND_MOTOR_INIT, ackData);
@@ -225,7 +244,11 @@ void setup() {
     transmitState(GIMBAL_TEST, ackData);   //Transmit gimbal test phase message
   #endif
 
+  redLedWarning();
   gimbalTest();
+
+  redLedWarning();
+  motorTest();
 
   lqrInit();
 
@@ -273,14 +296,17 @@ void setup() {
   // senderData.accBetaValue = 0.0;
 
   // Initialize the senderData object
-  senderData = {0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  senderData = {0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   // Initialize the ackData object
-  // ackData.armSwitch = 0;
+  ackData.armSwitch = false;
   ackData.calButton = 0;
   ackData.thrustSlider = 0;
   ackData.lxAxisValue = 0;
   ackData.lyAxisValue = 0;
+
+  // Init lqr singal struct
+  lqrSignals = {0.0, 0.0, 0.0, 0.0, 0.0};
 
   #ifdef DEBUG
   Serial.println("Init complete!");
@@ -292,47 +318,60 @@ void setup() {
     transmitState(SYSTEM_READY, ackData);
   #endif
 
+  // LED arm indication
+  // To do! <<<<<<<<<<<<<<<<<<<<<<<<<---------------------------------
+
+  // Arm rocket
+  redLedWarning();
   ackData.armSwitch = true;
 
   gimbalTest();
 
   // Set start time
-  t0 = millis();
-  t1 = millis();
+  t0 = micros();
+  tTerminate = micros();
 
-  t0Lqr = millis();
-  t1Lqr = millis();
+  t0Lqr = micros();
+  t1Lqr = micros();
 }
 
 
-// =======================================
-// ===============MAIN LOOP===============
-// =======================================
+// =============================================================================================
+// =============== MAIN LOOP ===============
+// =============================================================================================
 
 
 void loop() {
   // =============== Time / frequency management =================
   imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
-  // Serial.print("\t");
-  // Serial.print(t1);
 
-  if (t1 - t0 >= TIME_LIMIT) {
+  // =============== Safety checks =================
+  // Termination timer
+  if (tTerminate - t0 >= TIME_LIMIT) {
     motorsWrite(1100, ackData);
     #ifdef DEBUG
       Serial.print("\nABORT!!!!!!!");
     #endif
+    ackData.armSwitch = false;
+    digitalWrite(RED_LED_PIN, LOW);
     delay(200000);
   }
   else {
-    t1 = millis();
+    tTerminate = millis();
   }
   
-  #ifndef DISABLE_COM
-    if (!ackData.armSwitch) {
-      motorsWrite(1100, ackData);
-    }
-  #endif
+  // Check arm switch
+  // #ifndef DISABLE_COM
+  if (!ackData.armSwitch) {
+    motorsWrite(1100, ackData);
+    digitalWrite(RED_LED_PIN, LOW);
+  } 
+  else {
+    digitalWrite(RED_LED_PIN, HIGH);
+  }
+  // #endif
 
+  // Check 
   #ifdef DISABLE_COM
     if (!digitalRead(CAL_BUTTON)) {
       ackData.armSwitch = false;
@@ -409,18 +448,36 @@ void loop() {
   // PID actuation
   // motorsWrite(motorSpeed, ackData);
 
-  // =============== LQR =================
-  lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, lidarZ, zDot, t0, lqrOutputs);
+  // =============== LQR control =================
   
-  // Actuation
-  motorsWrite(lqrOutputs.motorSpeed, ackData);
-  setServo1Pos(-xGimb);
-  setServo2Pos(-yGimb);
+  // Regulate at predefined frequency
+  if (t1Lqr - t0Lqr >= (1/CONTROLLER_FREQUENCY)) {
+    // Calculate current time (passed since t0)
+    float currentTime = (t0 - micros()) / pow(10.0, 6);
+    senderData.timeStamp = currentTime;
 
-  // Store control outputs in senderData struct
-  senderData.motorSpeed = lqrOutputs.motorSpeed;
-  senderData.gimb1 = lqrOutputs.gimb1;
-  senderData.gimb1 = lqrOutputs.gimb1;
+    lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, lidarZ, zDot, currentTime, lqrSignals);
+    
+    // Actuation
+    motorsWrite(lqrSignals.motorSpeed, ackData);
+    setServo1Pos(-xGimb);
+    setServo2Pos(-yGimb);
+
+    // Store control outputs in senderData struct
+    senderData.motorSpeed = lqrSignals.motorSpeed;
+    senderData.gimb1 = lqrSignals.gimb1;
+    senderData.gimb1 = lqrSignals.gimb1;
+
+    // Log to SD-card at 100 Hz
+    write2SD();
+
+    t0Lqr = 0;
+    t1Lqr = 0;
+  }
+  else {
+    t1Lqr = millis();
+  }
+
 
   // Ground control
   // --------------
@@ -449,7 +506,6 @@ void loop() {
     transmitFlightData(senderData, ackData);
   #endif
 
-  write2SD();
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
   imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.

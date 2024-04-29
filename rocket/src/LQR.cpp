@@ -31,7 +31,7 @@ Matrix<8> error;
 Matrix<3,8> K;
 Matrix<3> U;
 
-unsigned int c = 0;
+unsigned int counter;
 
 // Tradjectory matricis
 float time_array[1001] = 
@@ -64,40 +64,45 @@ void lqrInit() {
         -3.6555,   16.3671,    3.5823,   -0.0000,    0.0000,    0.0000,    0.0000,   -0.0000,
         -0.0000,    0.0000,    0.0000,   -3.7323,   19.9068,    5.2541,   -0.0000,   -0.0000
     };
-    c = 0;
+    counter = 0;
 }
 
 
 
 void get_tradj_ref(float current_time) {
-    if (c < sizeof(time_array) && (current_time > time_array[c])) {
-        c++;
+    if (counter < sizeof(time_array) && (current_time > time_array[counter])) {
+        counter++;
         get_tradj_ref(current_time);  // recurcisve to avoid 'time lag'
     }
     else {
-        tradj_ref = {0, 0, 0, 0, 0, 0, zref[c], zdotref[c]};
+        tradj_ref = {0, 0, 0, 0, 0, 0, zref[counter], zdotref[counter]};
     }
 }
 
 
 
 // LQR calc
-void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2, float gamma2_dot, float z, float z_dot, float t0, LQR_outputs lqrOutputs) {
+void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2, float gamma2_dot, float z, float z_dot, float currentTime, LqrSignals lqrSignals) {
 
     // Update X
     X = {x_dot, gamma1, gamma1_dot, y_dot, gamma2, gamma2_dot, z, z_dot};
 
-    get_tradj_ref(t0 - millis());
+    get_tradj_ref(currentTime);
 
+    // Log reference values
+    lqrSignals.zRef = zref[counter];
+    lqrSignals.zDotRef = zdotref[counter];
+    
     // Calculate error
     error = tradj_ref - X;
 
     // Calculate control singals
     U = K * error;
 
-    // int thrust = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
+    // F = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
+    // float motorRate = 2*exp(-9*)
 
-    lqrOutputs.motorSpeed = U(1);
-    lqrOutputs.gimb1 = U(2);
-    lqrOutputs.gimb2 = U(3);
+    lqrSignals.motorSpeed = U(1);
+    lqrSignals.gimb1 = U(2);
+    lqrSignals.gimb2 = U(3);
 }

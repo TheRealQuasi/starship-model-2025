@@ -33,7 +33,7 @@
 #define SERVO_1_PIN 2
 #define SERVO_2_PIN 3
 #define CAL_BUTTON  37//6
-#define LED_PIN     41 
+#define RED_LED_PIN     41 
 
 // // ===== Radio pin assignment =====
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
@@ -45,6 +45,9 @@
 // // =============================================================================================
 // //  Constants 
 // // =============================================================================================
+
+// ===== Div settings =====
+#define BLINK_COUNT 5
 
 // ====== Motor and servo constants ======
 // #define SPEED_PROCENT_LIMIT 100

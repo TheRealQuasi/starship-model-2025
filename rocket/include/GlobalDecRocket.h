@@ -37,6 +37,10 @@ struct PacketData
   float z;
   float zDot;
 
+  // Control reference values
+  float zRef;
+  float zDotRef;
+
   // Control output values
   float motorSpeed;
   float gimb1;
@@ -74,11 +78,16 @@ enum States {
   SYSTEM_READY = 6
 };
 
-// LQR control outputs
-struct LQR_outputs {
-  float motorSpeed = 0; // Motorspeed in % of max RPM
-  float gimb1 = 0;
-  float gimb2 = 0;
+// LQR signals
+struct LqrSignals {
+  // Input (reference)
+  float zRef;
+  float zDotRef;
+
+  // Output
+  float motorSpeed; // Motorspeed in % of max RPM
+  float gimb1;
+  float gimb2;
 };
 
 
