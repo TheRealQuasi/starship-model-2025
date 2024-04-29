@@ -63,6 +63,7 @@ Imu6DOF imu;
 TFMPI2C tfmP;         // Create a TFMini-Plus I2C object
 
 // Variables storing data from TFmini plus
+float zMeter = 0 ;
 int16_t lidarZ = 0;       // Distance to object in centimeters
 int16_t lidarFlux = 0;       // Signal strength or quality of return signal
 int16_t lidarTemp = 0;       // Internal temperature of Lidar sensor chip
@@ -143,7 +144,7 @@ void write2SD(){
     dataFile.print(senderData.timeStamp);
     dataFile.print(",");
 
-  // State variables (x)
+    // State variables (x)
     dataFile.print(senderData.xDot);
     dataFile.print(",");
     dataFile.print(senderData.roll);
@@ -171,7 +172,7 @@ void write2SD(){
     // Control output values
     dataFile.print(senderData.motorSpeed);
     dataFile.print(",");
-    dataFile.println(senderData.gimb1);
+    dataFile.print(senderData.gimb1);
     dataFile.print(",");
     dataFile.println(senderData.gimb2);
     dataFile.close();
@@ -336,8 +337,8 @@ void setup() {
   t0Lqr = micros();
   t1Lqr = micros();
 
-  tCheck0 = 0;
-  tCheck1 = 0;
+  tCheck0 = micros();
+  tCheck1 = micros();
 }
 
 
@@ -353,7 +354,7 @@ void loop() {
 
   // =============== Safety checks =================
   // Termination timer
-  if (tTerminate - t0 >= TIME_LIMIT) {
+  if (tTerminate - t0 >= TIME_LIMIT * 1000) {
     motorsWrite(1100, ackData);
     #ifdef DEBUG
       Serial.print("\nABORT!!!!!!!");
@@ -363,7 +364,7 @@ void loop() {
     delay(200000);
   }
   else {
-    tTerminate = millis();
+    tTerminate = micros();
   }
   
   // Check arm switch
@@ -392,12 +393,15 @@ void loop() {
 
   // Read sensors and filter data
   imu.update();                          // Get IMU data and filter it with LP / smoothing and Madgwick-filters
-  zPrev = lidarZ;
+  zPrev = zMeter;
   tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
-  
+  zMeter = float(lidarZ) * 0.01;
+
   #ifdef DEBUG
     Serial.print("Altitude = ");
-    Serial.print(lidarZ);   
+    Serial.print(zMeter);   
+    // Serial.print("\t");
+    // Serial.print(lidarFlux);   
   #endif
 
   // Read barometer data
@@ -426,7 +430,7 @@ void loop() {
   // To-do (kalman estimator)
   xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
   yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
-  zDot = (lidarZ - zPrev)/imu.dt;
+  zDot = (zMeter - zPrev)/imu.dt;
 
   // Store new state values in senderData struct
   senderData.xDot      = xDot;
@@ -435,7 +439,7 @@ void loop() {
   senderData.yDot      = yDot;
   senderData.pitch     = imu.pitch_IMU; 
   senderData.pitchDot  = imu.GyroY; 
-  senderData.z         = lidarZ;
+  senderData.z         = zMeter;
   senderData.zDot      = zDot;
 
   // ===========================================
@@ -444,7 +448,7 @@ void loop() {
 
   // =============== PID =================
   // PID altitude
-  // motorSpeed = altitude_pid(lidarZ*0.01, ALT_REF);
+  // motorSpeed = altitude_pid(zMeter*0.01, ALT_REF);
   // Serial.println(motorSpeed);
 
   // PID angle 
@@ -457,18 +461,33 @@ void loop() {
   // =============== LQR control =================
   
   // Regulate at predefined frequency
-  if (t1Lqr - t0Lqr >= (1/CONTROLLER_FREQUENCY)) {
+  if (t1Lqr - t0Lqr >= (1/CONTROLLER_FREQUENCY) / 1000000) {
     // Calculate current time (passed since t0)
-    float currentTime = (micros() - t0) / pow(10.0, 6);
-    senderData.timeStamp = currentTime;
+    float currentTime = (micros() - t0) * pow(10.0, -6);
+    senderData.timeStamp = micros() - t0;
 
-    lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, lidarZ, zDot, currentTime, lqrSignals);
+    lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, zMeter, zDot, currentTime, lqrSignals);
     
     // Actuation
+    Serial.print("----------------------------------------------------------------");
+    Serial.print("\n");
+    Serial.print("Time: ");
+    Serial.print(currentTime);
+    Serial.print("\n");
+    Serial.print("motorSpeed: ");
+    Serial.print(lqrSignals.motorSpeed);
+    Serial.print("\n");
+    Serial.print("\n");
+        
+
     motorsWrite(lqrSignals.motorSpeed, ackData);
     setServo1Pos(-xGimb);
     setServo2Pos(-yGimb);
 
+    // Store control inputs
+    senderData.zRef = lqrSignals.zRef;
+    senderData.zDotRef = lqrSignals.zDotRef;
+    
     // Store control outputs in senderData struct
     senderData.motorSpeed = lqrSignals.motorSpeed;
     senderData.gimb1 = lqrSignals.gimb1;
@@ -477,11 +496,11 @@ void loop() {
     // Log to SD-card at 100 Hz
     write2SD();
 
-    t0Lqr = 0;
-    t1Lqr = 0;
+    t0Lqr = micros();
+    t1Lqr = micros();
   }
   else {
-    t1Lqr = millis();
+    t1Lqr = micros();
   }
 
 
@@ -512,14 +531,14 @@ void loop() {
     transmitFlightData(senderData, ackData);
   #endif
 
+  tCheck1 = micros();
+  #ifdef DEBUG
+    if((tCheck1 - tCheck0) / pow(10, 6) > 0.00051) {
+      Serial.print(tCheck1 - tCheck0);
+    }
+  #endif
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
   imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
   
-  tCheck1 = micros();
-  #ifdef DEBUG
-    if((tCheck1 - tCheck0) / pow(10, 6) > 0.00051) {
-      Serial.print(tCheck1 - tCheck0)
-    }
-  #endif
 }

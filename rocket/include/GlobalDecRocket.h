@@ -25,7 +25,7 @@ struct PacketData
   // float betaValue;
   // float accBetaValue; 
 
-  unsigned long timeStamp;
+  float timeStamp;
 
   // State variables (x)
   float xDot;

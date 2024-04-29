@@ -12,9 +12,9 @@
 
 // =================================================================
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
-// #define DEBUG
+#define DEBUG
 #define DISABLE_COM
-#define TIME_LIMIT 4000
+#define TIME_LIMIT 5000
 
 // =================================================================
 
@@ -54,7 +54,7 @@
 #define SPEED_LIMIT 1750                // Maximum allowed motor speed [us]
 #define SERVO_1_HOME 55 //82;          // 0 position [degrees]
 #define SERVO_2_HOME 71 //107; // 88;  // 0 position[degrees]
-#define MAX_GIMBAL 15
+#define MAX_GIMBAL 30
 
 // ====== Ground control specs ======
 #define CAL_BUTTON_DURATION 2000        // How long the botton needs to hold to enter esc calibration [ms]
@@ -88,11 +88,11 @@
 // ====== IMU Configuration ======
 // BMI088 settings
 
-//Filter parameters - Defaults tuned for 2kHz loop rate; Do not touch unless you know what you are doing:
+// Filter parameters - Defaults tuned for 2kHz loop rate; Do not touch unless you know what you are doing:
 #define MADGWICK_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
 #define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
 #define CALIBRATION_COUNT 10000 //20000;
-#define WARMUP_TIME 15000//20000 //10000
+#define WARMUP_TIME 100//10000 //15000//20000 //10000
 
 #define B_MADGWCIK 0.04 //0.02; //0.04;    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
 #define B_ACCEL 0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)

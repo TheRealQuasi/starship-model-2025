@@ -82,7 +82,7 @@ void get_tradj_ref(float current_time) {
 
 
 // LQR calc
-void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2, float gamma2_dot, float z, float z_dot, float currentTime, LqrSignals lqrSignals) {
+void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2, float gamma2_dot, float z, float z_dot, float currentTime, LqrSignals& lqrSignals) {
 
     // Update X
     X = {x_dot, gamma1, gamma1_dot, y_dot, gamma2, gamma2_dot, z, z_dot};
@@ -99,10 +99,20 @@ void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2,
     // Calculate control singals
     U = K * error;
 
-    // F = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
-    // float motorRate = 2*exp(-9*)
 
-    lqrSignals.motorSpeed = U(1);
+    // F = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
+    float x = U(1);
+    // #ifdef DEBUG
+    //     Serial.print("\n\n");
+    //     Serial.print(x);
+    // #endif
+
+
+    float motorRate = (2*pow(10,-9) * pow(x, 3)) - (pow(10,-5) * pow(x, 2)) + (0.0491 * x) + 8.646;
+
+    float pwm = map(motorRate, 0, 100, 1100, 1940);
+
+    lqrSignals.motorSpeed = pwm;
     lqrSignals.gimb1 = U(2);
     lqrSignals.gimb2 = U(3);
 }
