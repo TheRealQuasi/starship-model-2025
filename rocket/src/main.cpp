@@ -89,6 +89,9 @@ float xDot = 0;
 float yDot = 0;
 float zDot = 0;
 
+// SD file
+String sdFile = "";
+
 
 // =============================================================================================
 //  Functions
@@ -134,38 +137,17 @@ void initSD(){
       Serial.println("SD: Failed to create data file");
     #endif
   }
+
+  sdFile = filename;
 }
 
 void write2SD(){
   // Open the file. Note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  dataFile = SD.open("rocketData.csv", FILE_WRITE);
+  dataFile = SD.open(sdFile.c_str(), FILE_WRITE);
 
   // If the file is available, write to it:
   if (dataFile) {
-    // dataFile.print(senderData.timeStamp);
-    // dataFile.print(",");
-    // dataFile.print(senderData.posXValue);
-    // dataFile.print(",");
-    // dataFile.print(senderData.posYValue);
-    // dataFile.print(",");
-    // dataFile.print(senderData.posZValue);
-    // dataFile.print(",");
-    // dataFile.print(senderData.accXValue);
-    // dataFile.print(",");
-    // dataFile.print(senderData.accYValue);
-    // dataFile.print(",");
-    // dataFile.print(senderData.accZValue);
-    // dataFile.print(",");
-    // dataFile.print(senderData.gamValue);
-    // dataFile.print(",");
-    // dataFile.print(senderData.accGamValue);
-    // dataFile.print(",");
-    // dataFile.print(senderData.betaValue);
-    // dataFile.print(",");
-    // dataFile.println(senderData.accBetaValue);
-    // dataFile.close();
-
     // Time stamp
     dataFile.print(senderData.timeStamp);
     dataFile.print(",");
@@ -237,6 +219,9 @@ void setup() {
     Serial.println("");
     Serial.println("Initializing I2C bus...");
   #endif
+
+  // Initialize the SD card
+  initSD();
 
   // =================== Radio setup =====================
 
@@ -312,19 +297,6 @@ void setup() {
   // }
 
   // Initialize the senderData object
-  // senderData.timeStamp = 0;
-  // senderData.posXValue = 0.0;
-  // senderData.posYValue = 0.0;
-  // senderData.posZValue = 0.0;
-  // senderData.accXValue = 0.0;
-  // senderData.accYValue = 0.0;
-  // senderData.accZValue = 0.0;
-  // senderData.gamValue = 0.0;
-  // senderData.accGamValue = 0.0;
-  // senderData.betaValue = 0.0;
-  // senderData.accBetaValue = 0.0;
-
-  // Initialize the senderData object
   senderData = {0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   // Initialize the ackData object
@@ -340,9 +312,6 @@ void setup() {
   #ifdef DEBUG
   Serial.println("Init complete!");
   #endif
-
-  // Initialize the SD card
-  initSD();
 
   #ifndef DISABLE_COM
     transmitState(SYSTEM_READY, ackData);
@@ -488,7 +457,7 @@ void loop() {
   // =============== LQR control =================
   
   // Regulate at predefined frequency
-  if (t1Lqr - t0Lqr >= (1/CONTROLLER_FREQUENCY) / 1000000) {
+  if (t1Lqr - t0Lqr >= (1/CONTROLLER_FREQUENCY) * 1000000) {
     // Calculate current time (passed since t0)
     float currentTime = (micros() - t0) * pow(10.0, -6);
     senderData.timeStamp = micros() - t0;
@@ -518,7 +487,7 @@ void loop() {
     // Store control outputs in senderData struct
     senderData.motorSpeed = lqrSignals.motorSpeed;
     senderData.gimb1 = lqrSignals.gimb1;
-    senderData.gimb1 = lqrSignals.gimb1;
+    senderData.gimb2 = lqrSignals.gimb2;
 
     // Log to SD-card at 100 Hz
     write2SD();

@@ -112,8 +112,8 @@ public:
       Serial.print("\t");
       Serial.print(pitch_IMU);
       Serial.print("\t");
-      Serial.print(yaw_IMU);
-      Serial.print("\n");
+      // Serial.print(yaw_IMU);
+      // Serial.print("\n");
     #endif
   }
 
