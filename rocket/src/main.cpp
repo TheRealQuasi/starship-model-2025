@@ -110,6 +110,32 @@ void printAckData(){
   }
 }
 
+// Initialize the SD card
+void initSD(){
+  if (!SD.begin(BUILTIN_SDCARD)) {
+    #ifdef DEBUG
+      Serial.println("SD: Card failed, or not present");
+    #endif
+    // Don't do anything more
+  }
+
+  // Find a unique filename
+  int counter = 0;
+  String filename;
+  do {
+    counter++;
+    filename = "rocketData" + String(counter) + ".csv";
+  } while (SD.exists(filename.c_str()));
+
+  // Create a new data file with a unique name
+  dataFile = SD.open(filename.c_str(), FILE_WRITE);
+  if (!dataFile) {
+    #ifdef DEBUG
+      Serial.println("SD: Failed to create data file");
+    #endif
+  }
+}
+
 void write2SD(){
   // Open the file. Note that only one file can be open at a time,
   // so you have to close this one before opening another.
@@ -315,7 +341,8 @@ void setup() {
   Serial.println("Init complete!");
   #endif
 
-  SD.begin(BUILTIN_SDCARD);
+  // Initialize the SD card
+  initSD();
 
   #ifndef DISABLE_COM
     transmitState(SYSTEM_READY, ackData);
