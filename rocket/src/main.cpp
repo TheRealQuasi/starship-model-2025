@@ -180,7 +180,7 @@ void write2SD(){
   // If the file isn't open, pop up an error:
   else {
     #ifdef DEBUG
-      Serial.println("error opening data.csv");
+      Serial.println("error opening rocketData.csv");
     #endif
   }
 }

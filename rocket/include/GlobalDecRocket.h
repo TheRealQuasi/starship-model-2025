@@ -13,18 +13,6 @@
 
 struct PacketData
 {
-  // byte timeStamp;
-  // float posXValue;
-  // float posYValue;
-  // float posZValue;
-  // float accXValue;
-  // float accYValue; 
-  // float accZValue; 
-  // float gamValue;
-  // float accGamValue;
-  // float betaValue;
-  // float accBetaValue; 
-
   float timeStamp;
 
   // State variables (x)

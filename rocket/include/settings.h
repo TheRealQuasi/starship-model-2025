@@ -59,7 +59,7 @@
 // ====== Ground control specs ======
 #define CAL_BUTTON_DURATION 2000        // How long the botton needs to hold to enter esc calibration [ms]
 
-// ====== Wireless interface ======
+// ====== I2C interface ======
 #define IMU_ADR 0x68 //b1101000 // Sensor adress for I2C communication
 //#define PRESSURE_SENSOR_ADR 0x77 // Default adress and does not need to be given
 
