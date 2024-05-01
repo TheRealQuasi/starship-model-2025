@@ -105,16 +105,16 @@ public:
   void update () {
     getIMUdata_BMI088();
     madgwickStep();
-    #ifdef DEBUG
-      Serial.print("\t");
-      Serial.print("(Xr, Yr, Zr):\t");
-      Serial.print(roll_IMU);
-      Serial.print("\t");
-      Serial.print(pitch_IMU);
-      Serial.print("\t");
-      // Serial.print(yaw_IMU);
-      // Serial.print("\n");
-    #endif
+    // #ifdef DEBUG
+    //   Serial.println("\t");
+    //   Serial.print("(Xr, Yr):\t");
+    //   Serial.print(roll_IMU);
+    //   Serial.print("\t");
+    //   Serial.print(pitch_IMU);
+    //   Serial.print("\t");
+    //   // Serial.print(yaw_IMU);
+    //   // Serial.print("\n");
+    // #endif
   }
 
   // <<<<<<<<------------------- To do: Might need to add "get" functions to feed values to global variables in main
@@ -394,6 +394,11 @@ private:
         #endif
 
         bmi088.initialize();
+        // #define ACC_RANGE RANGE_6G
+        // #define ACC_RATE ODR_1600
+
+        // #define ACC_RANGE RANGE_2000
+        // #define GYRO_RATE ODR_2000_BW_532
 
         // Set specific IMU settings
         bmi088.setAccScaleRange(RANGE_6G);

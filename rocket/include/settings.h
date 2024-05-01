@@ -14,7 +14,7 @@
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 #define DEBUG
 #define DISABLE_COM
-#define TIME_LIMIT 5000
+#define TIME_LIMIT 5000//10000
 
 // =================================================================
 
@@ -33,7 +33,7 @@
 #define SERVO_1_PIN 2
 #define SERVO_2_PIN 3
 #define CAL_BUTTON  37//6
-#define RED_LED_PIN     41 
+#define RED_LED_PIN 41 
 
 // // ===== Radio pin assignment =====
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
@@ -51,7 +51,7 @@
 
 // ====== Motor and servo constants ======
 // #define SPEED_PROCENT_LIMIT 100
-#define SPEED_LIMIT 1750                // Maximum allowed motor speed [us]
+#define SPEED_LIMIT 1800                // Maximum allowed motor speed [us]
 #define SERVO_1_HOME 55 //82;          // 0 position [degrees]
 #define SERVO_2_HOME 71 //107; // 88;  // 0 position[degrees]
 #define MAX_GIMBAL 30
@@ -75,7 +75,7 @@
 
 // ====== Other ======
 // Baudrate for serial communication to terminal on computer
-#define BAUDRATE 500000//115200 
+#define BAUDRATE 576000//500000//115200 
 
 /* // Timeout to wait before skipping a task
 #define TIMEOUT_DURATION 15000000 // 15 seconds */
@@ -92,11 +92,17 @@
 #define MADGWICK_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
 #define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
 #define CALIBRATION_COUNT 10000 //20000;
-#define WARMUP_TIME 10000 //15000//20000 //10000
+#define WARMUP_TIME 20000 //10000
 
 #define B_MADGWCIK 0.04 //0.02; //0.04;    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
-#define B_ACCEL 0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
-#define B_GYRO 0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
+#define B_ACCEL 0.3//0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
+#define B_GYRO 0.3//0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
+
+// #define ACC_RANGE RANGE_6G
+// #define ACC_RATE ODR_1600
+
+// #define ACC_RANGE RANGE_2000
+// #define GYRO_RATE ODR_2000_BW_532
 
 
 // ====== Pressure sensor configuration ======

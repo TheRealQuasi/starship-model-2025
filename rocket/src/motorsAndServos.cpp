@@ -235,10 +235,13 @@ void waitESCCalCommand(bool &escCalibrationStatus) {
       }
     }
 
-    delay(1000);
 
+    delay(1000);
+  
     // When button press duration is enough, run ESC calibation
+    digitalWrite(RED_LED_PIN, HIGH);
     escCalibration(escCalibrationStatus);
+    digitalWrite(RED_LED_PIN, LOW);
   }
 }
 

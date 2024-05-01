@@ -53,16 +53,19 @@ float zdotref[1001] =
 
 // Inits
 void lqrInit() {
-    X.Fill(0);
-    tradj_ref.Fill(0);
-    error.Fill(0);
-    U.Fill(0);
+    X.Fill(0.0);
+    tradj_ref.Fill(0.0);
+    error.Fill(0.0);
+    U.Fill(0.0);
 
     K =
     {
-        -0.0000,    0.0000,    0.0000,   -0.0000,    0.0000,    0.0000,   21.0558,   11.4359,
-        -3.6555,   16.3671,    3.5823,   -0.0000,    0.0000,    0.0000,    0.0000,   -0.0000,
-        -0.0000,    0.0000,    0.0000,   -3.7323,   19.9068,    5.2541,   -0.0000,   -0.0000
+        // -0.0000,    0.0000,    0.0000,   -0.0000,    0.0000,    0.0000,   21.0558,   11.4359,
+        // -3.6555,   16.3671,    3.5823,   -0.0000,    0.0000,    0.0000,    0.0000,   -0.0000,
+        // -0.0000,    0.0000,    0.0000,   -3.7323,   19.9068,    5.2541,   -0.0000,   -0.0000
+        0.0000,    -0.0000,    -0.0000,     0.0000,    -0.0000,    -0.0000,     6.8995,     4.8290,
+       -0.2742,     4.6317,     1.1902,    -0.0000,     0.0000,     0.0000,    -0.0000,    -0.0000,
+        0.0000,    -0.0000,    -0.0000,    -0.2852,     4.9051,     1.3903,     0.0000,     0.0000
     };
     counter = 0;
 }
@@ -99,20 +102,41 @@ void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2,
     // Calculate control singals
     U = K * error;
 
-
     // F = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
-    float x = U(1);
-    // #ifdef DEBUG
-    //     Serial.print("\n\n");
-    //     Serial.print(x);
-    // #endif
+    
+    // LQR force output in Netons ( + gravitational acceleration to maintain altitude) 
+    float F = float(U(0)) + 2.5 * 9.82;
+    
+    #ifdef DEBUG
+        Serial.print("  zDot: ");
+        Serial.print(z_dot);
+        Serial.print("  zDotRef: ");
+        Serial.print(zdotref[counter]); //zdotref[counter]);
+        Serial.print("  ");
+
+        Serial.print("\t zref: ");
+        Serial.print(zref[counter]);
+        Serial.print("  F: ");
+        Serial.print(F);
+        Serial.print("   ");
+    #endif
 
 
-    float motorRate = (2*pow(10,-9) * pow(x, 3)) - (pow(10,-5) * pow(x, 2)) + (0.0491 * x) + 8.646;
+    // Convert from newtons to grams
+    F *=  101.83;
+
+    float motorRate = 0.8 * (2*pow(10,-9) * pow(F, 3)) - (pow(10,-5) * pow(F, 2)) + (0.0491 * F) + 8.646;
 
     float pwm = map(motorRate, 0, 100, 1100, 1940);
 
+    if (pwm > SPEED_LIMIT) {
+      pwm = SPEED_LIMIT;
+    }
+    if (pwm < 1100) {
+      pwm = 1100;
+    }
+
     lqrSignals.motorSpeed = pwm;
-    lqrSignals.gimb1 = U(2);
-    lqrSignals.gimb2 = U(3);
+    lqrSignals.gimb1 = float(U(1));
+    lqrSignals.gimb2 = float(U(2));
 }

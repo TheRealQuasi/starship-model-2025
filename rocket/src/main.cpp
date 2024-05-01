@@ -68,7 +68,7 @@ int16_t lidarZ = 0;       // Distance to object in centimeters
 int16_t lidarFlux = 0;       // Signal strength or quality of return signal
 int16_t lidarTemp = 0;       // Internal temperature of Lidar sensor chip
 
-int16_t zPrev = 0;       // Distance to object in centimeters
+float zPrev = 0;       // Distance to object in centimeters
 
 // Servo control variables
 float xGimb = 0;
@@ -81,6 +81,8 @@ float t0;
 float tTerminate;
 float t0Lqr;
 float t1Lqr;
+float t0Lidar;
+float t1Lidar;
 float tCheck0 = 0;
 float tCheck1 = 0;
 
@@ -262,7 +264,7 @@ void setup() {
   gimbalTest();
 
   redLedWarning();
-  motorTest();
+  // motorTest();
 
   lqrInit();
 
@@ -321,6 +323,9 @@ void setup() {
   // To do! <<<<<<<<<<<<<<<<<<<<<<<<<---------------------------------
 
   // Arm rocket
+  #ifdef DEBUG
+    Serial.print("\n\n Entering main loop - Rocket armed!!!!");
+  #endif
   redLedWarning();
   ackData.armSwitch = true;
 
@@ -332,6 +337,9 @@ void setup() {
 
   t0Lqr = micros();
   t1Lqr = micros();
+
+  t0Lidar = micros();
+  t1Lidar = micros();
 
   tCheck0 = micros();
   tCheck1 = micros();
@@ -347,6 +355,7 @@ void loop() {
   // =============== Time / frequency management =================
   tCheck0 = micros();
   imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
+  digitalWrite(RED_LED_PIN, HIGH);
 
   // =============== Safety checks =================
   // Termination timer
@@ -366,7 +375,7 @@ void loop() {
   // Check arm switch
   // #ifndef DISABLE_COM
   if (!ackData.armSwitch) {
-    motorsWrite(1100, ackData);
+    // motorsWrite(1100, ackData);
     digitalWrite(RED_LED_PIN, LOW);
   } 
   else {
@@ -388,17 +397,39 @@ void loop() {
   // ======================================================
 
   // Read sensors and filter data
-  imu.update();                          // Get IMU data and filter it with LP / smoothing and Madgwick-filters
-  zPrev = zMeter;
-  tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
-  zMeter = float(lidarZ) * 0.01;
+  imu.update();                         // Get IMU data and filter it with LP / smoothing and Madgwick-filters
+  // Preliminary, rough estimations of the missing states
+  // To-do (kalman estimator)
+  xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
+  yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
 
-  #ifdef DEBUG
-    Serial.print("Altitude = ");
-    Serial.print(zMeter);   
-    // Serial.print("\t");
-    // Serial.print(lidarFlux);   
-  #endif
+
+  // Get lidar data (100 Hz)
+  if (t1Lidar - t0Lidar >= 10000) {
+    float dtLidar = (t1Lidar - t0Lidar) / 1000000;
+    zPrev = zMeter;
+    tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+    zMeter = float(lidarZ) * 0.01;
+    t0Lidar = micros();
+    t1Lidar = micros();
+
+    // Preliminary, rough estimations of the missing states
+    // To-do (kalman estimator)az
+    zDot = ((zMeter - zPrev) / dtLidar); //imu.dt;
+
+    // Store new state values in senderData struct
+    senderData.xDot      = xDot;
+    senderData.roll      = imu.roll_IMU;
+    senderData.rollDot   = imu.GyroX;
+    senderData.yDot      = yDot;
+    senderData.pitch     = imu.pitch_IMU; 
+    senderData.pitchDot  = imu.GyroY; 
+    senderData.z         = zMeter;
+    senderData.zDot      = zDot;
+  }
+  else {
+    t1Lidar = micros();
+  }
 
   // Read barometer data
   /* float psReturn = readPS();
@@ -422,21 +453,6 @@ void loop() {
     sensorData.psHeight = psReturn;
   } */
 
-  // Preliminary, rough estimations of the missing states
-  // To-do (kalman estimator)
-  xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
-  yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
-  zDot = (zMeter - zPrev)/imu.dt;
-
-  // Store new state values in senderData struct
-  senderData.xDot      = xDot;
-  senderData.roll      = imu.roll_IMU;
-  senderData.rollDot   = imu.GyroX;
-  senderData.yDot      = yDot;
-  senderData.pitch     = imu.pitch_IMU; 
-  senderData.pitchDot  = imu.GyroY; 
-  senderData.z         = zMeter;
-  senderData.zDot      = zDot;
 
   // ===========================================
   // ================ Control ==================
@@ -458,27 +474,55 @@ void loop() {
   
   // Regulate at predefined frequency
   if (t1Lqr - t0Lqr >= (1/CONTROLLER_FREQUENCY) * 1000000) {
+    #ifdef DEBUG
+      Serial.print("\n z = ");
+      Serial.print(zMeter - 0.10);
+
+      Serial.print("\t");
+      Serial.print("(Xr, Yr): ");
+      Serial.print(imu.roll_IMU);
+      Serial.print("  ");
+      Serial.print(imu.pitch_IMU);
+      Serial.print("  ");
+    #endif
+
+
     // Calculate current time (passed since t0)
-    float currentTime = (micros() - t0) * pow(10.0, -6);
+    float currentTime = (micros() - t0) / 1000000;
     senderData.timeStamp = micros() - t0;
 
     lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, zMeter, zDot, currentTime, lqrSignals);
+    xGimb = lqrSignals.gimb1;
+    yGimb = lqrSignals.gimb2;
     
     // Actuation
-    Serial.print("----------------------------------------------------------------");
-    Serial.print("\n");
-    Serial.print("Time: ");
-    Serial.print(currentTime);
-    Serial.print("\n");
-    Serial.print("motorSpeed: ");
-    Serial.print(lqrSignals.motorSpeed);
-    Serial.print("\n");
-    Serial.print("\n");
-        
+    // Serial.print("----------------------------------------------------------------");
+    // Serial.print("\n");
+    // Serial.print("\n");
+    // Serial.print("motorSpeed: ");
+    // Serial.print(lqrSignals.motorSpeed);
+    // Serial.print("\n");
+    // Serial.print("\n");
+
+    #ifdef DEBUG
+      Serial.print("  g1: ");
+      Serial.print(xGimb);
+      Serial.print("  g2: ");
+      Serial.print(yGimb);
+
+      Serial.print("   PWM: ");
+      Serial.print(lqrSignals.motorSpeed);
+      Serial.print("\t ");
+      Serial.print("t: ");
+      Serial.print(currentTime);
+      Serial.print("   dt: ");
+      Serial.print(t1Lqr - t0Lqr);
+      
+    #endif
 
     motorsWrite(lqrSignals.motorSpeed, ackData);
-    setServo1Pos(-xGimb);
-    setServo2Pos(-yGimb);
+    setServo1Pos(-yGimb);
+    setServo2Pos(-xGimb);
 
     // Store control inputs
     senderData.zRef = lqrSignals.zRef;
@@ -527,10 +571,17 @@ void loop() {
     transmitFlightData(senderData, ackData);
   #endif
 
-  tCheck1 = micros();
+  // tCheck1 = micros();
+  // if((tCheck1 - tCheck0) > 500) {
+  //   Serial.print("\n ****************************************** \n Loop too slow: ");
+  //   Serial.print(tCheck1 - tCheck0);
+  //   Serial.print("Microseconds \n \n");
+  // }
   #ifdef DEBUG
-    if((tCheck1 - tCheck0) / pow(10, 6) > 0.00051) {
+    if((tCheck1 - tCheck0) > 500) {
+      Serial.print("\n ****************************************** \n Loop too slow: ");
       Serial.print(tCheck1 - tCheck0);
+      Serial.print("Microseconds \n \n");
     }
   #endif
 
