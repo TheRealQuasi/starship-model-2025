@@ -150,41 +150,26 @@ void write2SD(){
 
   // If the file is available, write to it:
   if (dataFile) {
-    // Time stamp
-    dataFile.print(senderData.timeStamp);
-    dataFile.print(",");
 
-    // State variables (x)
-    dataFile.print(senderData.xDot);
-    dataFile.print(",");
-    dataFile.print(senderData.roll);
-    dataFile.print(",");
-    dataFile.print(senderData.rollDot);
-    dataFile.print(",");
-    dataFile.print(senderData.yDot);
-    dataFile.print(",");
-    dataFile.print(senderData.pitch);
-    dataFile.print(",");
-    dataFile.print(senderData.pitchDot);
-    dataFile.print(",");
-    dataFile.print(senderData.z);
-    dataFile.print(",");
-    dataFile.print(senderData.zDot);
-    dataFile.print(",");
+    String dataString = String(senderData.timeStamp) + "," +
+                        // State variables (x)
+                        String(senderData.xDot) + "," +
+                        String(senderData.roll) + "," +
+                        String(senderData.rollDot) + "," +
+                        String(senderData.yDot) + "," +
+                        String(senderData.pitch) + "," +
+                        String(senderData.pitchDot) + "," +
+                        String(senderData.z) + "," +
+                        String(senderData.zDot) + "," +
+                        // Control reference values
+                        String(senderData.zRef) + "," +
+                        String(senderData.zDotRef) + "," +
+                        // Control output values
+                        String(senderData.motorSpeed) + "," +
+                        String(senderData.gimb1) + "," +
+                        String(senderData.gimb2) + "\n";
 
-    // Control reference values
-    dataFile.print(senderData.zRef);
-    dataFile.print(",");
-    dataFile.print(senderData.zDotRef);
-    dataFile.print(",");
-
-
-    // Control output values
-    dataFile.print(senderData.motorSpeed);
-    dataFile.print(",");
-    dataFile.print(senderData.gimb1);
-    dataFile.print(",");
-    dataFile.println(senderData.gimb2);
+    dataFile.print(dataString);
     dataFile.close();
   }
   // If the file isn't open, pop up an error:
