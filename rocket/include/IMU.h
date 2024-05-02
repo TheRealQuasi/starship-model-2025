@@ -45,9 +45,9 @@ public:
   unsigned long prev_time;
   unsigned long start_time, current_time;
 
-  float B_madgwick = 0.04;  // Madgwick filter parameter
-  float B_accel = 0.14;     // Accelerometer LP filter paramter
-  float B_gyro = 0.1;       // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
+  float B_madgwick = B_MADGWCIK;  // Madgwick filter parameter
+  float B_accel = B_ACCEL;     // Accelerometer LP filter paramter
+  float B_gyro = B_GYRO;       // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
 
   // IMU states (raw sensor data from the BMI088)
   float AccX, AccY, AccZ = 0;                     // Acceleration [g]

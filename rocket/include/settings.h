@@ -92,11 +92,11 @@
 #define MADGWICK_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
 #define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
 #define CALIBRATION_COUNT 10000 //20000;
-#define WARMUP_TIME 20000 //10000
+#define WARMUP_TIME 100//21000 //10000
 
 #define B_MADGWCIK 0.04 //0.02; //0.04;    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
-#define B_ACCEL 0.3//0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
-#define B_GYRO 0.3//0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
+#define B_ACCEL 0.25//0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
+#define B_GYRO 0.25//0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
 
 // #define ACC_RANGE RANGE_6G
 // #define ACC_RATE ODR_1600

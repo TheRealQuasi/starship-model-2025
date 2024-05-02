@@ -225,6 +225,8 @@ void setup() {
     Serial.println("Initializing I2C bus...");
   #endif
 
+  // Serial.begin(BAUDRATE); 
+
   // Initialize the SD card
   initSD();
 
@@ -326,9 +328,9 @@ void setup() {
   // To do! <<<<<<<<<<<<<<<<<<<<<<<<<---------------------------------
 
   // Arm rocket
-  #ifdef DEBUG
-    Serial.print("\n\n Entering main loop - Rocket armed!!!!");
-  #endif
+  // #ifdef DEBUG
+  Serial.print("\n\n Entering main loop - Rocket armed!!!!");
+  // #endif
   redLedWarning();
   ackData.armSwitch = true;
 
@@ -524,8 +526,8 @@ void loop() {
     #endif
 
     motorsWrite(lqrSignals.motorSpeed, ackData);
-    setServo1Pos(-yGimb);
-    setServo2Pos(-xGimb);
+    setServo1Pos(-xGimb);
+    setServo2Pos(-yGimb);
 
     // Store control inputs
     senderData.zRef = lqrSignals.zRef;
@@ -537,7 +539,7 @@ void loop() {
     senderData.gimb2 = lqrSignals.gimb2;
 
     // Log to SD-card at 100 Hz
-    write2SD();
+    // write2SD();
 
     t0Lqr = micros();
     t1Lqr = micros();
@@ -574,19 +576,20 @@ void loop() {
     transmitFlightData(senderData, ackData);
   #endif
 
-  // tCheck1 = micros();
-  // if((tCheck1 - tCheck0) > 500) {
-  //   Serial.print("\n ****************************************** \n Loop too slow: ");
-  //   Serial.print(tCheck1 - tCheck0);
-  //   Serial.print("Microseconds \n \n");
-  // }
-  #ifdef DEBUG
-    if((tCheck1 - tCheck0) > 500) {
-      Serial.print("\n ****************************************** \n Loop too slow: ");
-      Serial.print(tCheck1 - tCheck0);
-      Serial.print("Microseconds \n \n");
-    }
-  #endif
+  tCheck1 = micros();
+  if((tCheck1 - tCheck0) > 500) {
+    Serial.print("\n ****************************************** \n Loop too slow: ");
+    Serial.print(tCheck1 - tCheck0);
+    Serial.print("Microseconds \n \n");
+  }
+
+  // #ifdef DEBUG
+  //   if((tCheck1 - tCheck0) > 500) {
+  //     Serial.print("\n ****************************************** \n Loop too slow: ");
+  //     Serial.print(tCheck1 - tCheck0);
+  //     Serial.print("Microseconds \n \n");
+  //   }
+  // #endif
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
   imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
