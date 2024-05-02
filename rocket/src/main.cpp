@@ -91,8 +91,17 @@ float xDot = 0;
 float yDot = 0;
 float zDot = 0;
 
+// ======== SD Card =========
 // SD file
 String sdFile = "";
+// Buffer for storing data
+String dataBuffer = "";
+// Maximum size of the buffer
+const int BUFFER_SIZE = 1000;
+// Time interval for writing to the SD card (in milliseconds)
+const unsigned long WRITE_INTERVAL = 10000;
+// Time of the last write operation
+unsigned long lastWriteTime = 0;
 
 
 // =============================================================================================
@@ -144,39 +153,48 @@ void initSD(){
 }
 
 void write2SD(){
-  // Open the file. Note that only one file can be open at a time,
-  // so you have to close this one before opening another.
-  dataFile = SD.open(sdFile.c_str(), FILE_WRITE);
+  // Add the current data point to the buffer
+  dataBuffer += String(senderData.timeStamp) + "," +
+                // State variables (x)
+                String(senderData.xDot) + "," +
+                String(senderData.roll) + "," +
+                String(senderData.rollDot) + "," +
+                String(senderData.yDot) + "," +
+                String(senderData.pitch) + "," +
+                String(senderData.pitchDot) + "," +
+                String(senderData.z) + "," +
+                String(senderData.zDot) + "," +
+                // Control reference values
+                String(senderData.zRef) + "," +
+                String(senderData.zDotRef) + "," +
+                // Control output values
+                String(senderData.motorSpeed) + "," +
+                String(senderData.gimb1) + "," +
+                String(senderData.gimb2) + "\n";
 
-  // If the file is available, write to it:
-  if (dataFile) {
+  // If the buffer is full or the write interval has passed, write the buffer to the SD card
+  if (dataBuffer.length() >= BUFFER_SIZE || millis() - lastWriteTime >= WRITE_INTERVAL) {
+    // Open the file. Note that only one file can be open at a time,
+    // so you have to close this one before opening another.
+    dataFile = SD.open(sdFile.c_str(), FILE_WRITE);
 
-    String dataString = String(senderData.timeStamp) + "," +
-                        // State variables (x)
-                        String(senderData.xDot) + "," +
-                        String(senderData.roll) + "," +
-                        String(senderData.rollDot) + "," +
-                        String(senderData.yDot) + "," +
-                        String(senderData.pitch) + "," +
-                        String(senderData.pitchDot) + "," +
-                        String(senderData.z) + "," +
-                        String(senderData.zDot) + "," +
-                        // Control reference values
-                        String(senderData.zRef) + "," +
-                        String(senderData.zDotRef) + "," +
-                        // Control output values
-                        String(senderData.motorSpeed) + "," +
-                        String(senderData.gimb1) + "," +
-                        String(senderData.gimb2) + "\n";
+    // If the file is available, write to it:
+    if (dataFile) {
+      dataFile.print(dataBuffer);
+      dataFile.close();
+    }
+    // If the file isn't open, pop up an error:
+    else {
+      #ifdef DEBUG
+        Serial.println("error opening rocketData.csv");
+      #endif
+    }
 
-    dataFile.print(dataString);
-    dataFile.close();
-  }
-  // If the file isn't open, pop up an error:
-  else {
-    #ifdef DEBUG
-      Serial.println("error opening rocketData.csv");
-    #endif
+    // Clear the buffer
+    dataBuffer = "";
+
+    // Update the time of the last write operation
+    lastWriteTime = millis();
   }
 }
 
