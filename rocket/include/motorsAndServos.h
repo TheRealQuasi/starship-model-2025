@@ -25,7 +25,7 @@ void setServo2Pos(int theta2);
 
 int speedMapping(int thrustLevel);
 
-void motorsWrite(int s, ControlData& ackData);
+void motorsWrite(int motor, int s, ControlData& ackData);
 
 void gimbalTest();
 

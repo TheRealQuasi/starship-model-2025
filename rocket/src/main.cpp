@@ -25,6 +25,7 @@
 #include "PID_altitude_new.h"
 #include "LQR.h"
 #include <SD.h>
+#include "RollControl.h"
 
 
 
@@ -354,7 +355,7 @@ void setup() {
   ackData.lyAxisValue = 0;
 
   // Init lqr singal struct
-  lqrSignals = {0.0, 0.0, 0.0, 0.0, 0.0};
+  lqrSignals = {0.0, 0.0, 0.0, 0.0, 0, 0};
 
   #ifdef DEBUG
   Serial.println("Init complete!");
@@ -404,7 +405,8 @@ void loop() {
   // =============== Safety checks =================
   // Termination timer
   if (tTerminate - t0 >= TIME_LIMIT * 1000) {
-    motorsWrite(1100, ackData);
+    motorsWrite(1, 1100, ackData);
+    motorsWrite(2, 1100, ackData);
     #ifdef DEBUG
       Serial.print("\nABORT!!!!!!!");
     #endif
@@ -438,7 +440,8 @@ void loop() {
   #ifdef DISABLE_COM
     if (!digitalRead(CAL_BUTTON)) {
       ackData.armSwitch = false;
-      motorsWrite(1100, ackData);
+      motorsWrite(1, 1100, ackData);
+      motorsWrite(2, 1100, ackData);
       delay(100000);    
     }
   #endif
@@ -546,7 +549,7 @@ void loop() {
       Serial.print(yGimb);
 
       Serial.print("   PWM: ");
-      Serial.print(lqrSignals.motorSpeed);
+      Serial.print(lqrSignals.motor1Speed);
       Serial.print("\t ");
       Serial.print("t: ");
       Serial.print(currentTime);
@@ -555,7 +558,8 @@ void loop() {
       
     #endif
 
-    motorsWrite(lqrSignals.motorSpeed, ackData);
+    motorsWrite(1, lqrSignals.motor1Speed, ackData);
+    motorsWrite(2, roll_p_controller(imu.yaw_IMU, lqrSignals.motor2Speed), ackData);
     setServo1Pos(-xGimb);
     setServo2Pos(-yGimb);
 
@@ -564,7 +568,7 @@ void loop() {
     senderData.zDotRef = lqrSignals.zDotRef;
     
     // Store control outputs in senderData struct
-    senderData.motorSpeed = lqrSignals.motorSpeed;
+    senderData.motorSpeed = lqrSignals.motor1Speed;
     senderData.gimb1 = lqrSignals.gimb1;
     senderData.gimb2 = lqrSignals.gimb2;
 

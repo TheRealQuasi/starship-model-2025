@@ -73,7 +73,9 @@ struct LqrSignals {
   float zDotRef;
 
   // Output
-  float motorSpeed; // Motorspeed in % of max RPM
+  //float motorSpeed; // Motorspeed in % of max RPM
+  int motor1Speed; //Lower motor
+  int motor2Speed; //Upper motor
   float gimb1;
   float gimb2;
 };
