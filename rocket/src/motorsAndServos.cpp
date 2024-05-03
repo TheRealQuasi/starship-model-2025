@@ -80,7 +80,7 @@ int speedMapping(int thrustLevel) {                  // <<<<<<<<<---------------
 }
 
 // Sets PWM on-time in [micro-seconds]
-void motorsWrite(int speed, ControlData& ackData) {
+void motorsWrite(int motor, int speed, ControlData& ackData) {
   // Check arming status, set speed to zero in case unarmed
   if(!(ackData.armSwitch)) {                                 // <<<<<<<<<-------This armed check might need tweaking to prevent shutdown mid air
     dc_motor_1.write(1100);
@@ -118,8 +118,12 @@ void motorsWrite(int speed, ControlData& ackData) {
     //   speed = sliderMapped;
     // }
 
-    dc_motor_1.write(speed);
-    dc_motor_2.write(speed);  
+    if(motor == 1){
+      dc_motor_1.write(speed);
+    }
+    else if(motor == 2){
+      dc_motor_2.write(speed);
+    } 
     // ToDo: Here, a shoudown procedure should be called
     }
 }
