@@ -448,20 +448,25 @@ void loop() {
   // ======================================================
 
   if (t1IMU - t0IMU >= imuSampleInv) {
-  // Read sensors and filter data
-  imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
-  imu.update();                         // Get IMU data and filter it with LP / smoothing and Madgwick-filters
+    // Read sensors and filter data
+    imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
+    // imu.update();                         
+    imu.sample();
+    t0IMU = micros();
+    t1IMU = micros();
+  }
+  else {
+    t1IMU = micros();
+  }
+
+  // Madgwick iteration
+  imu.madgwickStep();
+
   // Preliminary, rough estimations of the missing states
   // To-do (kalman estimator)
   xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
   yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
 
-  t0IMU = micros();
-  t1IMU = micros();
-  }
-  else {
-    t1IMU = micros();
-  }
 
 
   // Get lidar data (100 Hz)

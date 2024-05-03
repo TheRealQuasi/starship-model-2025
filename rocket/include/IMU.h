@@ -103,8 +103,6 @@ public:
 
   // Gets new readings from BMI088 and sends them to the madgwick filter that estimates the attitude
   void update () {
-    getIMUdata_BMI088();
-    madgwickStep();
     // #ifdef DEBUG
     //   Serial.println("\t");
     //   Serial.print("(Xr, Yr):\t");
@@ -117,7 +115,16 @@ public:
     // #endif
   }
 
-  // <<<<<<<<------------------- To do: Might need to add "get" functions to feed values to global variables in main
+  // Sample IMU data
+  void sample() {
+    getIMUdata_BMI088();
+  }
+
+  // Madgwick filter iteration
+  void madgwickStep() {
+    // Estimate states with madgwick filter
+    Madgwick6DOF(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
+  }
 
 void getAttitude(float* roll, float* pitch, float* yaw) {
     *roll = roll_IMU;
@@ -236,10 +243,6 @@ private:
     yaw_IMU = -atan2(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3)*57.29577951; //degrees
   }
 
-  void madgwickStep() {
-    // Estimate states with madgwick filter
-    Madgwick6DOF(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
-  }
 
   // IMU methods
   // ---------------
