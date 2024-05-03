@@ -394,18 +394,18 @@ private:
         #endif
 
         bmi088.initialize();
-        // #define ACC_RANGE RANGE_6G
-        // #define ACC_RATE ODR_1600
+        // #define ACC_RANGE_SETTING RANGE_6G
+        // #define ACC_RATE_SETTING ODR_1600
 
-        // #define ACC_RANGE RANGE_2000
-        // #define GYRO_RATE ODR_2000_BW_532
+        // #define GYRO_RANGE_SETTING RANGE_2000
+        // #define GYRO_RATE_SETTING ODR_2000_BW_532
 
         // Set specific IMU settings
-        bmi088.setAccScaleRange(RANGE_6G);
-        bmi088.setAccOutputDataRate(ODR_1600);
+        bmi088.setAccScaleRange(ACC_RANGE_SETTING);
+        bmi088.setAccOutputDataRate(ACC_RATE_SETTING);
 
-        bmi088.setGyroScaleRange(RANGE_2000);
-        bmi088.setGyroOutputDataRate(ODR_2000_BW_532);
+        bmi088.setGyroScaleRange(GYRO_RANGE_SETTING);
+        bmi088.setGyroOutputDataRate(GYRO_RATE_SETTING);
 
 
         break;

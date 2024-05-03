@@ -76,7 +76,7 @@ float yGimb = 0;
 float motorSpeed = 1140;
 
 
-// Time variables
+// Timing variables
 float t0;
 float tTerminate;
 float t0Lqr;
@@ -85,6 +85,13 @@ float t0Lidar;
 float t1Lidar;
 float tCheck0 = 0;
 float tCheck1 = 0;
+float t0IMU = 0;
+float t1IMU = 0;
+
+// Inverse sampling frequencies
+const float madgwickFrekvInv = 0;
+const float controllerFrekvInv = 0;
+const float imuSampleInv = 0;
 
 // Delta-states
 float xDot = 0;
@@ -99,14 +106,43 @@ String dataBuffer = "";
 // Maximum size of the buffer
 const int BUFFER_SIZE = 1000;
 // Time interval for writing to the SD card (in milliseconds)
-const unsigned long WRITE_INTERVAL = 10000;
+const unsigned long WRITE_INTERVAL = TIME_LIMIT;
 // Time of the last write operation
 unsigned long lastWriteTime = 0;
+
+// Debug variables
+float maxDeltaT = 0; // Maximum recorded iteration step time [us]
 
 
 // =============================================================================================
 //  Functions
 // =============================================================================================
+
+// // Barometer sampling
+// void getBarometer() {
+//   // Read barometer data
+//   float psReturn = readPS();
+//   if (psReturn == (-2)){
+//     #ifdef DEBUG
+//       Serial.println("No data to be found yet. Please wait...");
+//     #endif
+//   }
+//   else if (psReturn == (-1)){
+//     #ifdef DEBUG
+//       Serial.println("Error reading the pressure sensor. Please check the wiring and try again.");
+//     #endif
+//   }
+//   else{
+//     #ifdef DEBUG
+//       Serial.print("Height: ");
+//       Serial.print(psReturn);
+//       Serial.println(" m");
+//     #endif
+
+//     sensorData.psHeight = psReturn;
+//   }
+// }
+
 
 // Print the data from the ackData object
 void printAckData(){
@@ -275,6 +311,10 @@ void setup() {
 
 
   // =============== Sensor setup ===============
+  // Inverse sampling frequencies for timing (in microseconds)
+  const int madgwickFrekvInv = (1 / MADGWICK_FREQUENCY) * 1000000;
+  const int controllerFrekvInv = (1 / CONTROLLER_FREQUENCY) * 1000000;
+  const int imuSampleInv = (1 / IMU_SAMPLE_FREQUENCY) * 1000000;
 
   // Initialize I2C bus
   Wire.begin();
@@ -324,9 +364,6 @@ void setup() {
     transmitState(SYSTEM_READY, ackData);
   #endif
 
-  // LED arm indication
-  // To do! <<<<<<<<<<<<<<<<<<<<<<<<<---------------------------------
-
   // Arm rocket
   // #ifdef DEBUG
   Serial.print("\n\n Entering main loop - Rocket armed!!!!");
@@ -348,6 +385,9 @@ void setup() {
 
   tCheck0 = micros();
   tCheck1 = micros();
+
+  t0IMU = micros();
+  t1IMU = micros();
 }
 
 
@@ -359,7 +399,6 @@ void setup() {
 void loop() {
   // =============== Time / frequency management =================
   tCheck0 = micros();
-  imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
   digitalWrite(RED_LED_PIN, HIGH);
 
   // =============== Safety checks =================
@@ -371,6 +410,13 @@ void loop() {
     #endif
     ackData.armSwitch = false;
     digitalWrite(RED_LED_PIN, LOW);
+
+    // Print largest deltaT in main loop
+    Serial.print("\n\n\n =================================== \n Biggest delta T (bellow 10 ms): ");
+    Serial.print(maxDeltaT);
+    Serial.print(" [us] \n \n");
+
+
     delay(200000);
   }
   else {
@@ -401,26 +447,35 @@ void loop() {
   // ================ Sensors and filters =================
   // ======================================================
 
+  if (t1IMU - t0IMU >= imuSampleInv) {
   // Read sensors and filter data
+  imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
   imu.update();                         // Get IMU data and filter it with LP / smoothing and Madgwick-filters
   // Preliminary, rough estimations of the missing states
   // To-do (kalman estimator)
   xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
   yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
 
+  t0IMU = micros();
+  t1IMU = micros();
+  }
+  else {
+    t1IMU = micros();
+  }
+
 
   // Get lidar data (100 Hz)
   if (t1Lidar - t0Lidar >= 10000) {
     float dtLidar = (t1Lidar - t0Lidar) / 1000000;
     zPrev = zMeter;
-    tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+    // tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
     zMeter = float(lidarZ) * 0.01;
     t0Lidar = micros();
     t1Lidar = micros();
 
     // Preliminary, rough estimations of the missing states
     // To-do (kalman estimator)az
-    zDot = ((zMeter - zPrev) / dtLidar); //imu.dt;
+    zDot = ((zMeter - zPrev) / dtLidar);
 
     // Store new state values in senderData struct
     senderData.xDot      = xDot;
@@ -436,28 +491,7 @@ void loop() {
     t1Lidar = micros();
   }
 
-  // Read barometer data
-  /* float psReturn = readPS();
-  if (psReturn == (-2)){
-    #ifdef DEBUG
-      Serial.println("No data to be found yet. Please wait...");
-    #endif
-  }
-  else if (psReturn == (-1)){
-    #ifdef DEBUG
-      Serial.println("Error reading the pressure sensor. Please check the wiring and try again.");
-    #endif
-  }
-  else{
-    #ifdef DEBUG
-      Serial.print("Height: ");
-      Serial.print(psReturn);
-      Serial.println(" m");
-    #endif
-
-    sensorData.psHeight = psReturn;
-  } */
-
+  // getBarometer();
 
   // ===========================================
   // ================ Control ==================
@@ -478,7 +512,7 @@ void loop() {
   // =============== LQR control =================
   
   // Regulate at predefined frequency
-  if (t1Lqr - t0Lqr >= (1/CONTROLLER_FREQUENCY) * 1000000) {
+  if (t1Lqr - t0Lqr >= controllerFrekvInv) {
     #ifdef DEBUG
       Serial.print("\n z = ");
       Serial.print(zMeter - 0.10);
@@ -500,15 +534,6 @@ void loop() {
     xGimb = lqrSignals.gimb1;
     yGimb = lqrSignals.gimb2;
     
-    // Actuation
-    // Serial.print("----------------------------------------------------------------");
-    // Serial.print("\n");
-    // Serial.print("\n");
-    // Serial.print("motorSpeed: ");
-    // Serial.print(lqrSignals.motorSpeed);
-    // Serial.print("\n");
-    // Serial.print("\n");
-
     #ifdef DEBUG
       Serial.print("  g1: ");
       Serial.print(xGimb);
@@ -539,7 +564,7 @@ void loop() {
     senderData.gimb2 = lqrSignals.gimb2;
 
     // Log to SD-card at 100 Hz
-    // write2SD();
+    write2SD();
 
     t0Lqr = micros();
     t1Lqr = micros();
@@ -576,11 +601,17 @@ void loop() {
     transmitFlightData(senderData, ackData);
   #endif
 
+  // Calculate loop iteration deltaT and record max value if too big
   tCheck1 = micros();
-  if((tCheck1 - tCheck0) > 500) {
+  float bigDeltaT = tCheck1 - tCheck0;
+  if((bigDeltaT) > 500) {
+    if (bigDeltaT > maxDeltaT && bigDeltaT < 10000) {
+      maxDeltaT = bigDeltaT;
+    }
+    
     Serial.print("\n ****************************************** \n Loop too slow: ");
-    Serial.print(tCheck1 - tCheck0);
-    Serial.print("Microseconds \n \n");
+    Serial.print(bigDeltaT);
+    Serial.print(" [us] \n \n");
   }
 
   // #ifdef DEBUG
