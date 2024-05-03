@@ -79,19 +79,19 @@ float motorSpeed = 1140;
 // Timing variables
 float t0;
 float tTerminate;
-float t0Lqr;
-float t1Lqr;
+int t0Lqr;
+int t1Lqr;
 float t0Lidar;
 float t1Lidar;
 float tCheck0 = 0;
 float tCheck1 = 0;
-float t0IMU = 0;
-float t1IMU = 0;
+int t0IMU = 0;
+int t1IMU = 0;
 
 // Inverse sampling frequencies
-const float madgwickFrekvInv = 0;
-const float controllerFrekvInv = 0;
-const float imuSampleInv = 0;
+float madgwickFrekvInv = 0;
+float controllerFrekvInv = 0;
+float imuSampleInv = 0;
 
 // Delta-states
 float xDot = 0;
@@ -312,9 +312,9 @@ void setup() {
 
   // =============== Sensor setup ===============
   // Inverse sampling frequencies for timing (in microseconds)
-  const int madgwickFrekvInv = (1 / MADGWICK_FREQUENCY) * 1000000;
-  const int controllerFrekvInv = (1 / CONTROLLER_FREQUENCY) * 1000000;
-  const int imuSampleInv = (1 / IMU_SAMPLE_FREQUENCY) * 1000000;
+  madgwickFrekvInv = (1 / MADGWICK_FREQUENCY) * 1000000;
+  controllerFrekvInv = (1 / CONTROLLER_FREQUENCY) * 1000000;
+  imuSampleInv = (1 / IMU_SAMPLE_FREQUENCY) * 1000000;
 
   // Initialize I2C bus
   Wire.begin();
@@ -332,9 +332,6 @@ void setup() {
   #ifndef DISABLE_COM
     transmitState(FILTER_WARMUP, ackData);    // Transmit filter warmup phase message
   #endif
-
-  // Allow the madgwick filter to start converging on an estimate before flight
-  imu.filterWarmup();
 
   // // Barometer sensor setup
   // if(!initDPS310()){
@@ -356,6 +353,9 @@ void setup() {
   // Init lqr singal struct
   lqrSignals = {0.0, 0.0, 0.0, 0.0, 0.0};
 
+  // Allow the madgwick filter to start converging on an estimate before flight
+  imu.filterWarmup();
+
   #ifdef DEBUG
   Serial.println("Init complete!");
   #endif
@@ -370,8 +370,6 @@ void setup() {
   // #endif
   redLedWarning();
   ackData.armSwitch = true;
-
-  gimbalTest();
 
   // Set start time
   t0 = micros();
@@ -448,9 +446,7 @@ void loop() {
   // ======================================================
 
   if (t1IMU - t0IMU >= imuSampleInv) {
-    // Read sensors and filter data
-    imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
-    // imu.update();                         
+    // Read IMU
     imu.sample();
     t0IMU = micros();
     t1IMU = micros();
@@ -460,6 +456,7 @@ void loop() {
   }
 
   // Madgwick iteration
+  imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
   imu.madgwickStep();
 
   // Preliminary, rough estimations of the missing states
@@ -468,12 +465,11 @@ void loop() {
   yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
 
 
-
   // Get lidar data (100 Hz)
   if (t1Lidar - t0Lidar >= 10000) {
     float dtLidar = (t1Lidar - t0Lidar) / 1000000;
     zPrev = zMeter;
-    // tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+    tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
     zMeter = float(lidarZ) * 0.01;
     t0Lidar = micros();
     t1Lidar = micros();
@@ -614,9 +610,9 @@ void loop() {
       maxDeltaT = bigDeltaT;
     }
     
-    Serial.print("\n ****************************************** \n Loop too slow: ");
-    Serial.print(bigDeltaT);
-    Serial.print(" [us] \n \n");
+    // Serial.print("\n ****************************************** \n Loop too slow: ");
+    // Serial.print(bigDeltaT);
+    // Serial.print(" [us] \n \n");
   }
 
   // #ifdef DEBUG
