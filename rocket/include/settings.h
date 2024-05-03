@@ -15,6 +15,7 @@
 // #define DEBUG
 #define DISABLE_COM
 #define TIME_LIMIT 5000//10000
+#define ROLLCONTROLLER
 
 // =================================================================
 
@@ -52,6 +53,7 @@
 // ====== Motor and servo constants ======
 // #define SPEED_PROCENT_LIMIT 100
 #define SPEED_LIMIT 1800                // Maximum allowed motor speed [us]
+#define SPEED_MIN 1100                  // Lowest allowed motor speed
 #define SERVO_1_HOME 55 //82;          // 0 position [degrees]
 #define SERVO_2_HOME 71 //107; // 88;  // 0 position[degrees]
 #define MAX_GIMBAL 30
@@ -79,6 +81,9 @@
 
 /* // Timeout to wait before skipping a task
 #define TIMEOUT_DURATION 15000000 // 15 seconds */
+
+// ======== Roll Configuration =================================
+#define ROLL_Kp 3     // Proportional gain
 
 
 
