@@ -98,6 +98,7 @@ float imuSampleInv = 0;
 float xDot = 0;
 float yDot = 0;
 float zDot = 0;
+// int counter = 0;
 
 // ======== SD Card =========
 // SD file
@@ -352,7 +353,7 @@ void setup() {
   ackData.lyAxisValue = 0;
 
   // Init lqr singal struct
-  lqrSignals = {0.0, 0.0, 0.0, 0.0, 0, 0};
+  lqrSignals = {0.0, 0.0, 0, 0, 0.0, 0.0};
 
   // Allow the madgwick filter to start converging on an estimate before flight
   imu.filterWarmup();
@@ -387,6 +388,7 @@ void setup() {
 
   t0IMU = micros();
   t1IMU = micros();
+  // counter = 0;
 }
 
 
@@ -534,7 +536,8 @@ void loop() {
     float currentTime = (micros() - t0) / 1000000;
     senderData.timeStamp = micros() - t0;
 
-    lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, zMeter, zDot, currentTime, lqrSignals);
+    lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, zMeter, zDot, currentTime, lqrSignals);//, counter);
+    // counter++;
     xGimb = lqrSignals.gimb1;
     yGimb = lqrSignals.gimb2;
     
@@ -555,7 +558,14 @@ void loop() {
     #endif
 
     motorsWrite(1, lqrSignals.motor1Speed, ackData);
-    motorsWrite(2, roll_p_controller(imu.yaw_IMU, lqrSignals.motor2Speed), ackData);
+    #ifdef ROLLCONTROLLER
+      motorsWrite(2, roll_p_controller(imu.yaw_IMU, lqrSignals.motor2Speed), ackData);
+    #endif
+
+    #ifndef ROLLCONTROLLER
+      motorsWrite(2, lqrSignals.motor1Speed, ackData);
+    #endif
+
     setServo1Pos(-xGimb);
     setServo2Pos(-yGimb);
 
@@ -609,14 +619,14 @@ void loop() {
   // Calculate loop iteration deltaT and record max value if too big
   tCheck1 = micros();
   float bigDeltaT = tCheck1 - tCheck0;
-  if((bigDeltaT) > 500) {
+  if((bigDeltaT) > madgwickFrekvInv) {
     if (bigDeltaT > maxDeltaT && bigDeltaT < 10000) {
       maxDeltaT = bigDeltaT;
     }
     
-    // Serial.print("\n ****************************************** \n Loop too slow: ");
-    // Serial.print(bigDeltaT);
-    // Serial.print(" [us] \n \n");
+      Serial.print("\n ****************************************** \n Loop too slow: ");
+      Serial.print(bigDeltaT);
+      Serial.print(" [us] \n \n");
   }
 
   // #ifdef DEBUG
@@ -629,5 +639,4 @@ void loop() {
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
   imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
-  
 }

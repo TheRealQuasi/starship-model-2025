@@ -14,8 +14,8 @@
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 #define DEBUG
 #define DISABLE_COM
-#define TIME_LIMIT 20000//10000
-#define ROLLCONTROLLER
+#define TIME_LIMIT 5000//10000
+// #define ROLLCONTROLLER
 
 // =================================================================
 
@@ -116,11 +116,11 @@
 
 // Test 1
 // -----------------------------
-#define MADGWICK_FREQUENCY 800          // Main loop frequency (the same as mdagwick filter frequency)
+#define MADGWICK_FREQUENCY 400          // Main loop frequency (the same as mdagwick filter frequency)
 #define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
-#define IMU_SAMPLE_FREQUENCY //400
+#define IMU_SAMPLE_FREQUENCY 400
 #define CALIBRATION_COUNT 10000 //20000;
-#define WARMUP_TIME 21000 //10000
+#define WARMUP_TIME 20000
 
 #define B_MADGWCIK 0.04 //0.02; //0.04;    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
 #define B_ACCEL 0.25//0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
@@ -129,7 +129,7 @@
 #define ACC_RANGE_SETTING RANGE_3G
 #define ACC_RATE_SETTING ODR_200    // bwp = 145 Hz
 
-#define GYRO_RANGE_SETTING RANGE_1000
+#define GYRO_RANGE_SETTING RANGE_500
 #define GYRO_RATE_SETTING ODR_400_BW_47
 // -----------------------------
 // Test 1
