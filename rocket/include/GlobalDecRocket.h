@@ -33,7 +33,7 @@ struct PacketData
   float motorSpeed;
   float gimb1;
   float gimb2;
-};
+};  
 
 struct ControlData {
   bool armSwitch;     // Arm switch status

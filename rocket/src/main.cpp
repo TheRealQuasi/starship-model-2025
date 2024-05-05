@@ -78,21 +78,21 @@ float motorSpeed = 1140;
 
 
 // Timing variables
-float t0;
-float tTerminate;
-int t0Lqr;
-int t1Lqr;
-float t0Lidar;
-float t1Lidar;
-float tCheck0 = 0;
-float tCheck1 = 0;
-int t0IMU = 0;
-int t1IMU = 0;
+unsigned long t0;
+unsigned long tTerminate;
+unsigned long t0Lqr;
+unsigned long t1Lqr;
+unsigned long t0Lidar;
+unsigned long t1Lidar;
+unsigned long tCheck0 = 0;
+unsigned long tCheck1 = 0;
+unsigned long t0IMU = 0;
+unsigned long t1IMU = 0;
 
 // Inverse sampling frequencies
-float madgwickFrekvInv = 0;
-float controllerFrekvInv = 0;
-float imuSampleInv = 0;
+unsigned long madgwickFrekvInv = 0;
+unsigned long controllerFrekvInv = 0;
+unsigned long imuSampleInv = 0;
 
 // Delta-states
 float xDot = 0;
@@ -245,6 +245,49 @@ void redLedWarning() {
   }
 }
 
+void redLedWarningV2() {
+  t0 = micros();
+  unsigned long t1 = micros();
+  t0IMU = micros();  
+  t1IMU = micros();  
+
+  bool state = HIGH;
+  
+  int c = 1;
+
+  while (c < 5) {
+    // LED blink
+    if (t1 - t0 >= 250000) {
+      digitalWrite(RED_LED_PIN, state);
+
+      if (state) {
+        state = LOW;
+      } 
+      else {
+        if (c >= 5) {
+          break;
+        }
+        else {
+          state = HIGH;
+          c++;
+        }
+      }
+    }
+
+    // Maintain attitude estimation
+    if (t1IMU - t0IMU >= imuSampleInv) {
+      imu.sample();
+    }
+
+    // Madgwick step    
+    imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
+    imu.madgwickStep();
+    #ifdef LOOP_RATE
+      imu.loopRate();
+    #endif
+  }
+}
+
 
 // =============================================================================================
 //  Main Program
@@ -264,9 +307,6 @@ void setup() {
   #endif
 
   // Serial.begin(BAUDRATE); 
-
-  // Initialize the SD card
-  initSD();
 
   // =================== Radio setup =====================
 
@@ -310,6 +350,9 @@ void setup() {
   // motorTest();
 
   lqrInit();
+
+  // Initialize the SD card
+  initSD();
 
 
   // =============== Sensor setup ===============
@@ -356,10 +399,11 @@ void setup() {
   lqrSignals = {0.0, 0.0, 0, 0, 0.0, 0.0};
 
   // Allow the madgwick filter to start converging on an estimate before flight
+  // (This needs to happen without other uninteruptions right before entering the loop)
   imu.filterWarmup();
 
   #ifdef DEBUG
-  Serial.println("Init complete!");
+    Serial.println("Init complete!");
   #endif
 
   #ifndef DISABLE_COM
@@ -367,10 +411,13 @@ void setup() {
   #endif
 
   // Arm rocket
-  // #ifdef DEBUG
-  Serial.print("\n\n Entering main loop - Rocket armed!!!!");
-  // #endif
-  redLedWarning();
+  #ifdef DEBUG
+    Serial.print("\n\n Entering main loop - Rocket armed!!!!");
+  #endif
+  
+  // Red blinking to warn before startup
+  redLedWarningV2();
+
   ackData.armSwitch = true;
 
   // Set start time
@@ -388,7 +435,6 @@ void setup() {
 
   t0IMU = micros();
   t1IMU = micros();
-  // counter = 0;
 }
 
 
@@ -449,7 +495,7 @@ void loop() {
   // ======================================================
   // ================ Sensors and filters =================
   // ======================================================
-
+  
   if (t1IMU - t0IMU >= imuSampleInv) {
     // Read IMU
     imu.sample();
@@ -638,5 +684,7 @@ void loop() {
   // #endif
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
-  imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
+  #ifdef LOOP_RATE
+    imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
+  #endif
 }

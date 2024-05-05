@@ -10,11 +10,13 @@
 * Emlzdev (Emil Reinfeldt)
 */
 
+// Enable / disable settings
 // =================================================================
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
-#define DEBUG
+// #define DEBUG
 #define DISABLE_COM
 #define TIME_LIMIT 5000//10000
+#define LOOP_RATE
 // #define ROLLCONTROLLER
 
 // =================================================================
@@ -52,7 +54,7 @@
 
 // ====== Motor and servo constants ======
 // #define SPEED_PROCENT_LIMIT 100
-#define SPEED_LIMIT 1800                // Maximum allowed motor speed [us]
+#define SPEED_LIMIT 1700                // Maximum allowed motor speed [us]
 #define SPEED_MIN 1100                  // Lowest allowed motor speed
 #define SERVO_1_HOME 55 //82;          // 0 position [degrees]
 #define SERVO_2_HOME 71 //107; // 88;  // 0 position[degrees]
@@ -116,7 +118,7 @@
 
 // Test 1
 // -----------------------------
-#define MADGWICK_FREQUENCY 400          // Main loop frequency (the same as mdagwick filter frequency)
+#define MADGWICK_FREQUENCY 800          // Main loop frequency (the same as mdagwick filter frequency)
 #define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
 #define IMU_SAMPLE_FREQUENCY 400
 #define CALIBRATION_COUNT 10000 //20000;

@@ -53,7 +53,7 @@ float zdotref[1001] =
 // Thrust to RPM mapping
 double calculateRPM(double x) {
     // float motorRate = ((2*pow(10,-9) * pow(F, 3)) - (pow(10,-5) * pow(F, 2)) + (0.0491 * F) + 8.646) / 1.4;
-    double y = pow(10, -9) * pow(x, 2) - 6 * pow(10, -6) * pow(x, 2) + 0.0305 * x + 8.3411;
+    double y = pow(10, -9) * pow(x, 3) - 6 * pow(10, -6) * pow(x, 2) + 0.0305 * x + 8.3411;
     return y;
 }
 
@@ -61,6 +61,7 @@ double calculateRPM(double x) {
 void lqrInit() {
     X.Fill(0.0);
     tradj_ref.Fill(0.0);
+    // tradj_ref = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
     error.Fill(0.0);
     U.Fill(0.0);
 
@@ -72,29 +73,38 @@ void lqrInit() {
     //     0.0000,    -0.0000,    -0.0000,     0.0000,    -0.0000,    -0.0000,     6.8995,     4.8290,
     //    -0.2742,     4.6317,     1.1902,    -0.0000,     0.0000,     0.0000,    -0.0000,    -0.0000,
     //     0.0000,    -0.0000,    -0.0000,    -0.2852,     4.9051,     1.3903,     0.0000,     0.0000
-        0.0000   -0.0000,   0.0000,   0.0000,  -0.0000,   0.0000,   6.8995,   4.8290,
-       -0.0966,   0.8451,   0.3272,  -0.0000,   0.0000,   0.0000,   0.0000,   0.0000,
-        0.0000,  -0.0000,  -0.0000   -0.0971,   0.9531,   0.4267,   0.0000,   0.0000,
-    };
+    //     0.0000   -0.0000,   0.0000,   0.0000,  -0.0000,   0.0000,   6.8995,   4.8290,
+    //    -0.0966,   0.8451,   0.3272,  -0.0000,   0.0000,   0.0000,   0.0000,   0.0000,
+    //     0.0000,  -0.0000,  -0.0000   -0.0971,   0.9531,   0.4267,   0.0000,   0.0000,
+    // -0.0000,    0.0000,    0.0000,    0.0000,    -0.0000,    -0.0000,    21.5488,    7.2377,
+    // -0.0966,    0.8451,    0.3272,    -0.0000,    0.0000,    0.0000,    -0.0000,    -0.0000,
+    // 0.0000,    -0.0000,    0.0000,    -0.0971,    0.9531,    0.4267,    -0.0000,    -0.0000};
+
+    //  0.0000,    -0.0000,    -0.0000,     0.0000,    -0.0000,    -0.0000,     6.1758,     4.6783,
+    // -0.0966,     0.8451,     0.3272,     0.0000,    -0.0000,    -0.0000,    -0.0000,    -0.0000,
+    // -0.0000,    -0.0000,     0.0000,    -0.0971,     0.9531,     0.4267,    -0.0000,    -0.0000};   
+
+     0.0000,    -0.0000,    -0.0000,    -0.0000,     0.0000,     0.0000,     6.1758,     4.6783,
+    -0.0963,     1.0179,     0.3515,     0.0000,    -0.0000,    -0.0000,     0.0000,     0.0000,
+    -0.0000,     0.0000,     0.0000,    -0.0969,     1.1129,     0.4534,     0.0000,     0.0000};
     counter = 0;
 }
 
 
-
 void get_tradj_ref(float current_time) {
+    // tradj_ref = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
     if (counter < sizeof(time_array) - 1 && (current_time > time_array[counter])) {
         counter++;
         get_tradj_ref(current_time);  // recurcisve to avoid 'time lag'
     }
     else {
-        tradj_ref = {0, 0, 0, 0, 0, 0, zref[counter], zdotref[counter]};
+        tradj_ref = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, zref[counter], zdotref[counter]};
     }
-    // if (counter >= 1001) {
-    //     counter = 1000;
-    //     tradj_ref = {0, 0, 0, 0, 0, 0, zref[counter], zdotref[counter]};
-    // }
+    if (counter >= 1001) {
+        counter = 1000;
+        tradj_ref = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, zref[counter], zdotref[counter]};
+    }
 }
-
 
 
 // LQR calc
@@ -104,6 +114,7 @@ void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2,
     // Update X
     X = {x_dot, gamma1, gamma1_dot, y_dot, gamma2, gamma2_dot, z, z_dot};
 
+    // get_tradj_ref();
     get_tradj_ref(currentTime);
 
     // Log reference values
@@ -129,7 +140,7 @@ void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2,
         Serial.print("  ");
 
         Serial.print("\t zref: ");
-        Serial.print(zref[counter]);
+        Serial.print(tradj_ref(6));//zref[counter]);
         Serial.print("  F: ");
         Serial.print(F);
         Serial.print("   ");
