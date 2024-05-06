@@ -64,7 +64,8 @@ Imu6DOF imu;
 TFMPI2C tfmP;         // Create a TFMini-Plus I2C object
 
 // Variables storing data from TFmini plus
-float zMeter = 0 ;
+float zMeter = 0;
+float zCalibration = 0;
 int16_t lidarZ = 0;       // Distance to object in centimeters
 int16_t lidarFlux = 0;       // Signal strength or quality of return signal
 int16_t lidarTemp = 0;       // Internal temperature of Lidar sensor chip
@@ -364,6 +365,11 @@ void setup() {
   // Initialize I2C bus
   Wire.begin();
 
+  // Lidar calibration (measure offset to ground at standstill)
+    tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+    zMeter = float(lidarZ) * 0.01;
+    zCalibration = lidarZ;
+
   // Initialize IMU (needs to happend in the end, to allow for continous IMU sampling)
   imu.init();
 
@@ -521,7 +527,7 @@ void loop() {
     float dtLidar = (t1Lidar - t0Lidar) / 1000000;
     zPrev = zMeter;
     tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
-    zMeter = float(lidarZ) * 0.01;
+    zMeter = float(lidarZ) * 0.01 - zCalibration;
     t0Lidar = micros();
     t1Lidar = micros();
 
@@ -567,7 +573,7 @@ void loop() {
   if (t1Lqr - t0Lqr >= controllerFrekvInv) {
     #ifdef DEBUG
       Serial.print("\n z = ");
-      Serial.print(zMeter - 0.10);
+      Serial.print(zMeter);
 
       Serial.print("\t");
       Serial.print("(Xr, Yr): ");
@@ -663,18 +669,19 @@ void loop() {
   #endif
 
   // Calculate loop iteration deltaT and record max value if too big
-  tCheck1 = micros();
-  float bigDeltaT = tCheck1 - tCheck0;
-  if((bigDeltaT) > madgwickFrekvInv) {
-    if (bigDeltaT > maxDeltaT && bigDeltaT < 10000) {
-      maxDeltaT = bigDeltaT;
+  #ifdef DEBUG
+    tCheck1 = micros();
+    float bigDeltaT = tCheck1 - tCheck0;
+    if((bigDeltaT) > madgwickFrekvInv) {
+      if (bigDeltaT > maxDeltaT && bigDeltaT < 10000) {
+        maxDeltaT = bigDeltaT;
+      }
+      
+        Serial.print("\n ****************************************** \n Loop too slow: ");
+        Serial.print(bigDeltaT);
+        Serial.print(" [us] \n \n");
     }
-    
-      Serial.print("\n ****************************************** \n Loop too slow: ");
-      Serial.print(bigDeltaT);
-      Serial.print(" [us] \n \n");
-  }
-
+  #endif
   // #ifdef DEBUG
   //   if((tCheck1 - tCheck0) > 500) {
   //     Serial.print("\n ****************************************** \n Loop too slow: ");
