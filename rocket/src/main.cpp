@@ -464,10 +464,11 @@ void loop() {
     digitalWrite(RED_LED_PIN, LOW);
 
     // Print largest deltaT in main loop
-    Serial.print("\n\n\n =================================== \n Biggest delta T (bellow 10 ms): ");
-    Serial.print(maxDeltaT);
-    Serial.print(" [us] \n \n");
+    // Serial.print("\n\n\n =================================== \n Biggest delta T (bellow 10 ms): ");
+    // Serial.print(maxDeltaT);
+    // Serial.print(" [us] \n \n");
 
+    // Do nothing until the teensy is reset
     delay(1000000);
 
     // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
@@ -491,10 +492,12 @@ void loop() {
       ackData.armSwitch = false;
       motorsWrite(1, 1100, ackData);
       motorsWrite(2, 1100, ackData);
+
+      // Do nothing until the teensy is reset
       delay(1000000);
 
-    // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
-    while(0 == 0) {}    
+      // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
+      while(0 == 0) {}    
     }
   #endif
 
@@ -681,13 +684,6 @@ void loop() {
         Serial.print(" [us] \n \n");
     }
   #endif
-  // #ifdef DEBUG
-  //   if((tCheck1 - tCheck0) > 500) {
-  //     Serial.print("\n ****************************************** \n Loop too slow: ");
-  //     Serial.print(tCheck1 - tCheck0);
-  //     Serial.print("Microseconds \n \n");
-  //   }
-  // #endif
 
   // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
   #ifdef LOOP_RATE
