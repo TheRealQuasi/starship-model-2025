@@ -99,7 +99,6 @@ unsigned long imuSampleInv = 0;
 float xDot = 0;
 float yDot = 0;
 float zDot = 0;
-// int counter = 0;
 
 // ======== SD Card =========
 // SD file
@@ -452,7 +451,6 @@ void setup() {
 void loop() {
   // =============== Time / frequency management =================
   tCheck0 = micros();
-  digitalWrite(RED_LED_PIN, HIGH);
 
   // =============== Safety checks =================
   // Termination timer
@@ -470,31 +468,33 @@ void loop() {
     Serial.print(maxDeltaT);
     Serial.print(" [us] \n \n");
 
+    delay(1000000);
 
-    delay(200000);
+    // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
+    while(0 == 0) {}    
   }
   else {
     tTerminate = micros();
   }
   
   // Check arm switch
-  // #ifndef DISABLE_COM
   if (!ackData.armSwitch) {
-    // motorsWrite(1100, ackData);
     digitalWrite(RED_LED_PIN, LOW);
   } 
   else {
     digitalWrite(RED_LED_PIN, HIGH);
   }
-  // #endif
 
-  // Check 
+  // Check emergency stop
   #ifdef DISABLE_COM
     if (!digitalRead(CAL_BUTTON)) {
       ackData.armSwitch = false;
       motorsWrite(1, 1100, ackData);
       motorsWrite(2, 1100, ackData);
-      delay(100000);    
+      delay(1000000);
+
+    // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
+    while(0 == 0) {}    
     }
   #endif
 
@@ -532,7 +532,7 @@ void loop() {
     t1Lidar = micros();
 
     // Preliminary, rough estimations of the missing states
-    // To-do (kalman estimator)az
+    // To-do (kalman estimator)
     zDot = ((zMeter - zPrev) / dtLidar);
 
     // Store new state values in senderData struct
@@ -588,8 +588,7 @@ void loop() {
     float currentTime = (micros() - t0) / 1000000;
     senderData.timeStamp = micros() - t0;
 
-    lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, zMeter, zDot, currentTime, lqrSignals);//, counter);
-    // counter++;
+    lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, zMeter, zDot, currentTime, lqrSignals);
     xGimb = lqrSignals.gimb1;
     yGimb = lqrSignals.gimb2;
     
