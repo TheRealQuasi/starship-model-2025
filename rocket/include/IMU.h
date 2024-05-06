@@ -20,6 +20,7 @@
 #include <Arduino.h>
 #include <BMI088.h>
 #include <settings.h>
+#include <math.h>
 
 // =============================================================================================
 //  IMU class
@@ -41,7 +42,7 @@ public:
 
   // Time management
   int freq = MADGWICK_FREQUENCY;   // Frequency of the madgwick filter
-  float dt;                          // Stores dt that is required in the madgwick method
+  float dt;                          // Stores dt that is required in the madgwick method (invSampleFreq)
   unsigned long prev_time;
   unsigned long start_time, current_time;
 
@@ -155,8 +156,23 @@ private:
   // ============ Private methods ==============
   // Helper methods 
   // ----------------
+  // float invSqrt(float x) {
+  // return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
+  // }
+
+  //-------------------------------------------------------------------------------------------
+  // Fast inverse square-root
+  // See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
+
   float invSqrt(float x) {
-  return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
+    float halfx = 0.5f * x;
+    float y = x;
+    long i = *(long*)&y;
+    i = 0x5f3759df - (i>>1);
+    y = *(float*)&i;
+    y = y * (1.5f - (halfx * y * y));
+    y = y * (1.5f - (halfx * y * y));
+    return y;
   }
 
   // Madgwick filter
