@@ -22,8 +22,7 @@
  * @param channel The channel to use.
  * @param controllerData The controller data object to use.
  */
-void initRadio( RF24& radio,
-                uint8_t level, 
+void initRadio( uint8_t level, 
                 rf24_datarate_e speed,
                 uint8_t channel,
                 ControlData& controllerData
@@ -37,10 +36,9 @@ void initRadio( RF24& radio,
  * @param controllerData The controller data object to use.
  * @return true if data was received successfully, false otherwise.
  */
-bool receiveData(   RF24& radio, 
-                    PacketData& receiverData, 
-                    ControlData& controllerData
-                    );
+//bool receiveData(PacketData& receiverData, ControlData& controllerData);
+
+bool receivePacket(PacketData& receiverData, ControlData& controllerData);
 
 
 #endif // RADIOTRANSCEIVERSLAVE_H

@@ -18,9 +18,6 @@
 //  Definitions and Configuration
 // =============================================================================================
  
-// Define the pins used for the nRF24L01 transceiver module (CE, CSN)
-#define CE_PIN 2
-#define CSN_PIN 4
 // Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
 #define RF24_PA_LEVEL RF24_PA_LOW
 // Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
@@ -49,9 +46,6 @@
 // =============================================================================================
 //  Declarations
 // =============================================================================================
-
-// Instantiate an object for the nRF24L01 transceiver
-RF24 radio(CE_PIN, CSN_PIN);
 
 // Indicateds if there is new data to be read from the radio
 bool newData = false;
@@ -166,7 +160,7 @@ void setup(){
   setInputDefaultValues();
 
   // Initialize the radio communication module
-  initRadio(radio, RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL, controllerData);
+  initRadio(RF24_PA_LEVEL, RF24_SPEED, RF24_CHANNEL, controllerData);
   
   Serial.println("Init complete!");
 
@@ -180,7 +174,7 @@ void loop(){
   readController();
 
   // Receive and print data
-  newData = receiveData(radio, receiverData, controllerData);
+  newData = receivePacket(receiverData, controllerData);
   printData();
   //printControllerData();
 

@@ -20,11 +20,21 @@
 // Functions
 // ---------
 void setServo1Pos(int theta1);
+
 void setServo2Pos(int theta2);
+
 int speedMapping(int thrustLevel);
-void motorsWrite(int s);
-void abortCheck();
+
+void motorsWrite(int motor, int s, ControlData& ackData);
+
+void gimbalTest();
+
+void motorTest();
+
 void escCalibration(bool &escCalibrationStatus);
+
+void waitESCCalCommand(bool &escCalibrationStatus);
+
 void initServosMotors();
 
 #endif

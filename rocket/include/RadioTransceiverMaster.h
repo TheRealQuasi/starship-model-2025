@@ -21,8 +21,7 @@
  * @param speed The data rate of the radio transceiver.
  * @param channel The channel on which the radio transceiver operates.
  */
-void initRadio( RF24& radio,
-                uint8_t level, 
+void initRadio(uint8_t level, 
                 rf24_datarate_e speed,
                 uint8_t channel
                 );
@@ -37,11 +36,15 @@ void initRadio( RF24& radio,
  * @param prevMillis The object previous time in milliseconds.
  * @return true if the data transmission was successful, false otherwise.
  */
-bool transmitData(  RF24& radio, 
-                    PacketData& dataFrame, 
+/* bool transmitData(  PacketData& dataFrame, 
                     ControlData& ackData, 
                     bool& newControllerData, 
                     unsigned long& prevMillis
-                    );
+                    ); */
+
+
+void transmitFlightData(PacketData& dataToSend, ControlData& ackData);
+void transmitState(States state, ControlData& ackData);
+// void transmitErrorMsg(Errors errCode, ControlData& ackData);
 
 #endif // RADIOTRANSCEIVERMASTER_H

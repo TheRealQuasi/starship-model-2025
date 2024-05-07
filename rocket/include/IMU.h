@@ -20,6 +20,8 @@
 #include <Arduino.h>
 #include <BMI088.h>
 #include <settings.h>
+#include <math.h>
+#include <cstring> // for std::memcpy
 
 // =============================================================================================
 //  IMU class
@@ -40,14 +42,14 @@ public:
   int16_t temp = 0;
 
   // Time management
-  int freq = CONTROLLER_FREQUENCY;   // Frequency of the madgwick filter
-  float dt;                          // Stores dt that is required in the madgwick method
+  int freq = MADGWICK_FREQUENCY;   // Frequency of the madgwick filter
+  float dt;                          // Stores dt that is required in the madgwick method (invSampleFreq)
   unsigned long prev_time;
   unsigned long start_time, current_time;
 
-  float B_madgwick = 0.04;  // Madgwick filter parameter
-  float B_accel = 0.14;     // Accelerometer LP filter paramter
-  float B_gyro = 0.1;       // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
+  float B_madgwick = B_MADGWCIK;  // Madgwick filter parameter
+  float B_accel = B_ACCEL;     // Accelerometer LP filter paramter
+  float B_gyro = B_GYRO;       // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
 
   // IMU states (raw sensor data from the BMI088)
   float AccX, AccY, AccZ = 0;                     // Acceleration [g]
@@ -90,31 +92,54 @@ public:
   }
 
   // Inits for the entire IMU object
-  void initIMU () {
+  void init () {
+    #ifdef DEBUG
+      Serial.print("\n IMU init started \n");
+    #endif
+   
     init_BMI088();
     delay(500);
 
     start_time = millis();
-
-  // Calibration
-  // -----------
-  calculate_IMU_error_BMI088(); // 
-
-  filterIMUWarmup(); // Simulates a main loop for a few seconds (to get the madgwick filter to converge before the main loop)
   }
 
   // Gets new readings from BMI088 and sends them to the madgwick filter that estimates the attitude
-  void imuUpdate () {
-    getIMUdata_BMI088();
-    madgwickStep();
+  void update () {
+    // #ifdef DEBUG
+    //   Serial.println("\t");
+    //   Serial.print("(Xr, Yr):\t");
+    //   Serial.print(roll_IMU);
+    //   Serial.print("\t");
+    //   Serial.print(pitch_IMU);
+    //   Serial.print("\t");
+    //   // Serial.print(yaw_IMU);
+    //   // Serial.print("\n");
+    // #endif
   }
 
-  // <<<<<<<<------------------- To do: Might need to add "get" functions to feed values to global variables in main
+  // Sample IMU data
+  void sample() {
+    getIMUdata_BMI088();
+  }
+
+  // Madgwick filter iteration
+  void madgwickStep() {
+    // Estimate states with madgwick filter
+    Madgwick6DOF(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
+  }
 
 void getAttitude(float* roll, float* pitch, float* yaw) {
     *roll = roll_IMU;
     *pitch = pitch_IMU;
     *yaw = yaw_IMU;
+}
+
+void calibrate() {
+  calculate_IMU_error_BMI088();
+}
+
+void filterWarmup() {
+  filterIMUWarmup();
 }
 
 private:
@@ -132,9 +157,35 @@ private:
   // ============ Private methods ==============
   // Helper methods 
   // ----------------
+  // float invSqrt(float x) {
+  // return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
+  // }
+
+  //-------------------------------------------------------------------------------------------
+  // Fast inverse square-root
+  // See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
+
   float invSqrt(float x) {
-  return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
+    float halfx = 0.5f * x;
+    float y = x;
+    long i = *(long*)&y;
+    i = 0x5f3759df - (i>>1);
+    y = *(float*)&i;
+    y = y * (1.5f - (halfx * y * y));
+    y = y * (1.5f - (halfx * y * y));
+    return y;
   }
+
+  // float invSqrt(float x) {
+  //     float halfx = 0.5f * x;
+  //     float y = x;
+  //     std::memcpy(&y, &x, sizeof(float)); // Copy x to y
+  //     long i = 0x5f3759df - (*(long*)&y >> 1);
+  //     std::memcpy(&y, &i, sizeof(long)); // Copy i to y
+  //     y = y * (1.5f - (halfx * y * y));
+  //     y = y * (1.5f - (halfx * y * y));
+  //     return y;
+  // }
 
   // Madgwick filter
   // ---------------
@@ -220,10 +271,6 @@ private:
     yaw_IMU = -atan2(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3)*57.29577951; //degrees
   }
 
-  void madgwickStep() {
-    // Estimate states with madgwick filter
-    Madgwick6DOF(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
-  }
 
   // IMU methods
   // ---------------
@@ -235,6 +282,10 @@ private:
     * accelerometer values AccX, AccY, AccZ, GyroX, GyroY, GyroZ in getIMUdata(). This eliminates drift in the
     * measurement. 
     */
+    #ifdef DEBUG
+      Serial.print("Calibrating IMU - Steady state error calculation \n");
+    #endif
+
     AccErrorX = 0.0;
     AccErrorY = 0.0;
     AccErrorZ = 0.0;
@@ -350,7 +401,11 @@ private:
       * to boot. 
       */
     //Warm up IMU and madgwick filter in simulated main loop
-    for (int i = 0; i <= 10000; i++) {
+    #ifdef DEBUG
+      Serial.print("\n \n Warming up madgwick filter \n ------------------------ \n");
+    #endif
+
+    for (int i = 0; i <= WARMUP_TIME; i++) {
       prev_time = current_time;      
       current_time = micros();      
       dt = (current_time - prev_time)/1000000.0; 
@@ -365,8 +420,31 @@ private:
   void init_BMI088() {
     while (1) {
       if (bmi088.isConnection()) {
+        #ifdef DEBUG
+          Serial.print("bmi088 found!!!");
+        #endif
+
         bmi088.initialize();
+        // #define ACC_RANGE_SETTING RANGE_6G
+        // #define ACC_RATE_SETTING ODR_1600
+
+        // #define GYRO_RANGE_SETTING RANGE_2000
+        // #define GYRO_RATE_SETTING ODR_2000_BW_532
+
+        // Set specific IMU settings
+        bmi088.setAccScaleRange(ACC_RANGE_SETTING);
+        bmi088.setAccOutputDataRate(ACC_RATE_SETTING);
+
+        bmi088.setGyroScaleRange(GYRO_RANGE_SETTING);
+        bmi088.setGyroOutputDataRate(GYRO_RATE_SETTING);
+
+
         break;
+      }
+      else {
+        #ifdef DEBUG
+        Serial.print("Can't find bmi088 on I2C bus..........\n");
+        #endif
       }
       delay(1000); //2000        // <<<<<<<<<<<<<------------------Not sure if this is needed
     }

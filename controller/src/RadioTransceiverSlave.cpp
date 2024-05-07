@@ -26,6 +26,13 @@
 // Signal timeout in milli seconds. We will reset the data if no signal
 #define SIGNAL_TIMEOUT 5000
 
+// Define the pins used for the nRF24L01 transceiver module (CE, CSN)
+#define CE_PIN 2
+#define CSN_PIN 4
+
+// Instantiate an object for the nRF24L01 transceiver
+RF24 radio(CE_PIN, CSN_PIN);
+
 // Let these addresses be used for the pair
 uint8_t address[][6] = { "1Node" };
 
@@ -35,10 +42,18 @@ unsigned long lastRecvTime = 0;
 // This is last time "signal lost" message was printed
 unsigned long lastSignalLostPrinted = 0;
 
+// Data type
+enum DataType {
+  FLIGHT_DATA = 1,
+  STATE_DATA = 2,
+  ERROR_MSG = 3
+};
+
 // Create a Packet structure to hold the data that will be received from the other node
 struct Packet {
+  byte type;
   byte sequenceNumber;
-  byte data[PACKET_SIZE - sizeof(byte)]; // subtract the size of sequenceNumber
+  byte data[PACKET_SIZE - sizeof(byte) - sizeof(byte)]; // subtract the size of type and sequenceNumber
 };
 
 
@@ -71,8 +86,7 @@ struct Packet {
  * which represents the control data struct defined in the `GlobalDecGControl.h` file. This struct contains
  * information about the state of the Arduino-based controller, such as joystick positions, switch states, etc.
  */
-void initRadio( RF24& radio,
-                uint8_t level, 
+void initRadio( uint8_t level, 
                 rf24_datarate_e speed,
                 uint8_t channel,
                 ControlData& controllerData
@@ -131,18 +145,18 @@ void initRadio( RF24& radio,
   } */
 
   // Start handshake with the rocket
-  Serial.println("\tStarting handshake...");
+  /* Serial.println("\tStarting handshake...");
   char ackMsg[] = "ACK";
   if (!radio.writeAckPayload(1, &ackMsg, sizeof(ackMsg))){
     Serial.println("Failed to create acknowledgment message");
   }
-  char handshakeMsg[6]; 
+  char handshakeMsg[6];  */
 
   // Start the radio listening for data
   Serial.println("\tStart listening...");
   radio.startListening();
 
-  while ( true ) {
+  /* while ( true ) {
     if (radio.available()) {
       
       radio.read(&handshakeMsg, sizeof(handshakeMsg));
@@ -158,7 +172,7 @@ void initRadio( RF24& radio,
       Serial.println("Handshake failed: no handshake received");
     }
     delay(1000); // wait a second before trying again
-  }
+  } */
 
   // Pre-load data to send from buffer
   Serial.println("\tPre-loading data...");
@@ -180,7 +194,7 @@ void initRadio( RF24& radio,
  * @return The function `receiveData` is returning a boolean value - `true` or `false` based on whether
  * the RF24 chip is connected and a packet is available for reading.
  */
-bool receiveData(RF24& radio, PacketData& receiverData, ControlData& controllerData)
+/* bool receiveData(PacketData& receiverData, ControlData& controllerData)
 {
   Packet packet;
   bool newData = false;
@@ -203,6 +217,101 @@ bool receiveData(RF24& radio, PacketData& receiverData, ControlData& controllerD
     } 
     else {
       Serial.println("Unknown packet type received.");
+    }
+
+    // Load the payload for the next sendoff
+    radio.writeAckPayload(1, &controllerData, sizeof(ControlData));
+
+    lastRecvTime = millis();
+    return newData;
+  }
+  else
+  {
+    //Check Signal lost.
+    unsigned long now = millis();
+    if ( now - lastRecvTime > SIGNAL_TIMEOUT ) 
+    {
+      // Signal lost. TODO: Reset the input values
+      if (now - lastSignalLostPrinted > 5000) { // only print the message if at least 5 seconds have passed
+        Serial.println("RF Signal lost");
+        lastSignalLostPrinted = now; // update the last print time
+      }
+    }
+    return false;
+  }
+} */
+
+void receiveFlightData(PacketData& receiverData, Packet& packet)
+{
+  if (packet.sequenceNumber == 1) {
+    Serial.println("Data Packet 1 received");
+    // this is the first packet, store the data
+    memcpy(&receiverData, packet.data, PACKET_SIZE - sizeof(byte) - sizeof(byte));
+  } 
+  else if (packet.sequenceNumber == 2) {
+    Serial.println("Data Packet 2 received");
+    // this is the second packet, combine it with the first packet's data to form a PacketData
+    size_t packet2DataSize = sizeof(PacketData) - (PACKET_SIZE - sizeof(byte) - sizeof(byte));
+    memcpy(((byte*)&receiverData) + (PACKET_SIZE - sizeof(byte) - sizeof(byte)), packet.data, packet2DataSize);
+  } 
+  else {
+    Serial.println("Unknown packet type received.");
+  }
+}
+
+void receiveState(Packet& packet)
+{
+  switch (*reinterpret_cast<int*>(packet.data)) { //May need to use packet.data[0] instead of packet.data for byte access
+    case SERVO_AND_MOTOR_INIT:
+      Serial.println("State: SERVO_AND_MOTOR_INIT");
+      break;
+    case ESC_CALIBRATION:
+      Serial.println("State: ESC_CALIBRATION");
+      break;
+    case GIMBAL_TEST:
+      Serial.println("State: GIMBAL_TEST");
+      break;
+    case IMU_CALIBRATION:
+      Serial.println("State: IMU_CALIBRATION. Please wait for the calibration to finish. You will see disconnected RF radio message until the calibration is done.");
+      break;
+    case FILTER_WARMUP:
+      Serial.println("State: FILTER_WARMUP");
+      break;
+    case SYSTEM_READY:
+      Serial.println("State: SYSTEM_READY");
+      break;
+    default:
+      Serial.println("Unknown state received.");
+      break;
+  }
+}
+
+bool receivePacket(PacketData& receiverData, ControlData& controllerData)
+{
+  Packet packet;
+  bool newData = false;
+
+  if(radio.isChipConnected() && radio.available())
+  {
+    radio.read(&packet, sizeof(Packet));
+    
+    switch(packet.type) {
+      case FLIGHT_DATA:
+        receiveFlightData(receiverData, packet);
+        newData = true;
+        break;
+      case STATE_DATA:
+        receiveState(packet);
+        newData = true;
+        break;
+      case ERROR_MSG:
+        // this is an error message
+        Serial.print("Error message received: ");
+        /* Serial.println(packet.data); */
+        break;
+      default:
+        Serial.println("Unknown packet type received.");
+        break;
     }
 
     // Load the payload for the next sendoff
