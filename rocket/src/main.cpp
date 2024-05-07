@@ -421,7 +421,7 @@ void setup() {
   #endif
   
   // Red blinking to warn before startup
-  redLedWarningV2();
+  // redLedWarningV2();
 
   ackData.armSwitch = true;
 
@@ -464,9 +464,9 @@ void loop() {
     digitalWrite(RED_LED_PIN, LOW);
 
     // Print largest deltaT in main loop
-    // Serial.print("\n\n\n =================================== \n Biggest delta T (bellow 10 ms): ");
-    // Serial.print(maxDeltaT);
-    // Serial.print(" [us] \n \n");
+    Serial.print("\n\n\n =================================== \n Biggest delta T (bellow 10 ms): ");
+    Serial.print(maxDeltaT);
+    Serial.print(" [us] \n \n");
 
     // Do nothing until the teensy is reset
     delay(1000000);
@@ -478,28 +478,28 @@ void loop() {
     tTerminate = micros();
   }
   
-  // Check arm switch
-  if (!ackData.armSwitch) {
-    digitalWrite(RED_LED_PIN, LOW);
-  } 
-  else {
-    digitalWrite(RED_LED_PIN, HIGH);
-  }
+  // // Check arm switch
+  // if (!ackData.armSwitch) {
+  //   digitalWrite(RED_LED_PIN, LOW);
+  // } 
+  // else {
+  //   digitalWrite(RED_LED_PIN, HIGH);
+  // }
 
-  // Check emergency stop
-  #ifdef DISABLE_COM
-    if (!digitalRead(CAL_BUTTON)) {
-      ackData.armSwitch = false;
-      motorsWrite(1, 1100, ackData);
-      motorsWrite(2, 1100, ackData);
+  // // Check emergency stop
+  // #ifdef DISABLE_COM
+  //   if (!digitalRead(CAL_BUTTON)) {
+  //     ackData.armSwitch = false;
+  //     motorsWrite(1, 1100, ackData);
+  //     motorsWrite(2, 1100, ackData);
 
-      // Do nothing until the teensy is reset
-      delay(1000000);
+  //     // Do nothing until the teensy is reset
+  //     delay(1000000);
 
-      // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
-      while(0 == 0) {}    
-    }
-  #endif
+  //     // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
+  //     while(0 == 0) {}    
+  //   }
+  // #endif
 
   // ======================================================
   // ================ Sensors and filters =================
@@ -517,7 +517,13 @@ void loop() {
 
   // Madgwick iteration
   imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
+
+  unsigned long t0Madg = micros();
   imu.madgwickStep();
+  unsigned long t1Madg = micros();
+
+  Serial.print("\nMadgwick step took: ");
+  Serial.print(t1Madg - t0Madg);
 
   // Preliminary, rough estimations of the missing states
   // To-do (kalman estimator)
@@ -572,7 +578,7 @@ void loop() {
 
   // =============== LQR control =================
   
-  // Regulate at predefined frequency
+  // Run control-update at predefined frequency
   if (t1Lqr - t0Lqr >= controllerFrekvInv) {
     #ifdef DEBUG
       Serial.print("\n z = ");
@@ -679,9 +685,9 @@ void loop() {
         maxDeltaT = bigDeltaT;
       }
       
-        Serial.print("\n ****************************************** \n Loop too slow: ");
-        Serial.print(bigDeltaT);
-        Serial.print(" [us] \n \n");
+        // Serial.print("\n ****************************************** \n Loop too slow: ");
+        // Serial.print(bigDeltaT);
+        // Serial.print(" [us] \n \n");
     }
   #endif
 

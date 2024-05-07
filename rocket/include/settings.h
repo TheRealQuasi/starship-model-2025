@@ -13,7 +13,7 @@
 // Enable / disable settings
 // =================================================================
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
-// #define DEBUG
+#define DEBUG
 #define DISABLE_COM
 #define TIME_LIMIT 5000//10000
 #define LOOP_RATE
@@ -129,7 +129,7 @@
 #define B_GYRO 0.25//0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
 
 #define ACC_RANGE_SETTING RANGE_3G
-#define ACC_RATE_SETTING ODR_200    // bwp = 145 Hz
+#define ACC_RATE_SETTING ODR_400//ODR_200    // bwp = 145 Hz
 
 #define GYRO_RANGE_SETTING RANGE_500
 #define GYRO_RATE_SETTING ODR_400_BW_47

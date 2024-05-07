@@ -21,6 +21,7 @@
 #include <BMI088.h>
 #include <settings.h>
 #include <math.h>
+#include <cstring> // for std::memcpy
 
 // =============================================================================================
 //  IMU class
@@ -174,6 +175,17 @@ private:
     y = y * (1.5f - (halfx * y * y));
     return y;
   }
+
+  // float invSqrt(float x) {
+  //     float halfx = 0.5f * x;
+  //     float y = x;
+  //     std::memcpy(&y, &x, sizeof(float)); // Copy x to y
+  //     long i = 0x5f3759df - (*(long*)&y >> 1);
+  //     std::memcpy(&y, &i, sizeof(long)); // Copy i to y
+  //     y = y * (1.5f - (halfx * y * y));
+  //     y = y * (1.5f - (halfx * y * y));
+  //     return y;
+  // }
 
   // Madgwick filter
   // ---------------
