@@ -106,9 +106,9 @@ String sdFile = "";
 // Buffer for storing data
 String dataBuffer = "";
 // Maximum size of the buffer
-const int BUFFER_SIZE = 1000;
+const int BUFFER_SIZE = 56000;//500000; //1000;
 // Time interval for writing to the SD card (in milliseconds)
-const unsigned long WRITE_INTERVAL = TIME_LIMIT;
+const unsigned long WRITE_INTERVAL = TIME_LIMIT-1;
 // Time of the last write operation
 unsigned long lastWriteTime = 0;
 
@@ -144,6 +144,26 @@ float maxDeltaT = 0; // Maximum recorded iteration step time [us]
 //     sensorData.psHeight = psReturn;
 //   }
 // }
+
+void getLidar() {
+  float dtLidar = (t1Lidar - t0Lidar) / 1000000;
+  zPrev = zMeter;
+  // tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+  tfmP.getData(lidarZ);    // Get a frame of data from the TFmini
+  zMeter = float(float(lidarZ) * float(0.01)) - zCalibration;
+
+  if (zMeter < 0.00) {
+    zMeter = 0.00;
+  }
+  
+  // Get distance to ground
+  // if (abs(imu.roll_IMU) < 80 && abs(imu.pitch_IMU) < 80) {
+  //   zMeter = sqrt(zMeter * zMeter * (1 - pow( sin(imu.roll_IMU), 2 ) - pow( sin(imu.pitch_IMU), 2 )) );
+  // }
+  // Preliminary, rough estimations of the missing states
+  // To-do (kalman estimator)
+  zDot = ((zMeter - zPrev) / dtLidar);
+}
 
 
 // Print the data from the ackData object
@@ -317,37 +337,39 @@ void setup() {
 
   // =================== Servo and motor setup ===================
 
-  // Configure digital input for calButton
-  pinMode(CAL_BUTTON, INPUT_PULLUP);
+  #ifdef MOTORS_SERVOS
+    // Configure digital input for calButton
+    pinMode(CAL_BUTTON, INPUT_PULLUP);
 
-  // Configure digital putput for red led
-  pinMode(RED_LED_PIN, OUTPUT);
-  
-  // Initialize servos and ESCs (motors)
-  #ifndef DISABLE_COM
-    transmitState(SERVO_AND_MOTOR_INIT, ackData);
+    // Configure digital putput for red led
+    pinMode(RED_LED_PIN, OUTPUT);
+    
+    // Initialize servos and ESCs (motors)
+    #ifndef DISABLE_COM
+      transmitState(SERVO_AND_MOTOR_INIT, ackData);
+    #endif
+
+    initServosMotors();
+
+    // ESC calibration phase
+    #ifndef DISABLE_COM
+      transmitState(ESC_CALIBRATION, ackData);  //Transmit ESC calibration phase message
+    #endif
+
+    // Calibrate the ESCs throttle range once calButton has been pressed for at least 2 seconds
+    waitESCCalCommand(escCalibrationStatus);
+    
+    // Gimbal test phase
+    #ifndef DISABLE_COM
+      transmitState(GIMBAL_TEST, ackData);   //Transmit gimbal test phase message
+    #endif
+
+    redLedWarning();
+    gimbalTest();
+
+    redLedWarning();
+    // motorTest();
   #endif
-
-  initServosMotors();
-
-  // ESC calibration phase
-  #ifndef DISABLE_COM
-    transmitState(ESC_CALIBRATION, ackData);  //Transmit ESC calibration phase message
-  #endif
-
-  // Calibrate the ESCs throttle range once calButton has been pressed for at least 2 seconds
-  waitESCCalCommand(escCalibrationStatus);
-  
-  // Gimbal test phase
-  #ifndef DISABLE_COM
-    transmitState(GIMBAL_TEST, ackData);   //Transmit gimbal test phase message
-  #endif
-
-  redLedWarning();
-  gimbalTest();
-
-  redLedWarning();
-  // motorTest();
 
   lqrInit();
 
@@ -362,12 +384,14 @@ void setup() {
   imuSampleInv = (1 / IMU_SAMPLE_FREQUENCY) * 1000000;
 
   // Initialize I2C bus
+  // Wire.setSpeed(I2C_CLOCKSPEED);
   Wire.begin();
+  Wire.setClock(I2C_CLOCKSPEED);
 
   // Lidar calibration (measure offset to ground at standstill)
-    tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
-    zMeter = float(lidarZ) * 0.01;
-    zCalibration = lidarZ;
+  tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+  zMeter = float(lidarZ) * 0.01;
+  zCalibration = zMeter;
 
   // Initialize IMU (needs to happend in the end, to allow for continous IMU sampling)
   imu.init();
@@ -463,6 +487,8 @@ void loop() {
     ackData.armSwitch = false;
     digitalWrite(RED_LED_PIN, LOW);
 
+    write2SD();
+
     // Print largest deltaT in main loop
     Serial.print("\n\n\n =================================== \n Biggest delta T (bellow 10 ms): ");
     Serial.print(maxDeltaT);
@@ -507,7 +533,13 @@ void loop() {
   
   if (t1IMU - t0IMU >= imuSampleInv) {
     // Read IMU
+    unsigned long t0Madg = micros();
     imu.sample();
+    unsigned long t1Madg = micros();
+
+    Serial.print("\n IMU sample took: ");
+    Serial.print(t1Madg - t0Madg);
+
     t0IMU = micros();
     t1IMU = micros();
   }
@@ -518,12 +550,7 @@ void loop() {
   // Madgwick iteration
   imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
 
-  unsigned long t0Madg = micros();
   imu.madgwickStep();
-  unsigned long t1Madg = micros();
-
-  Serial.print("\nMadgwick step took: ");
-  Serial.print(t1Madg - t0Madg);
 
   // Preliminary, rough estimations of the missing states
   // To-do (kalman estimator)
@@ -532,31 +559,28 @@ void loop() {
 
 
   // Get lidar data (100 Hz)
-  if (t1Lidar - t0Lidar >= 10000) {
-    float dtLidar = (t1Lidar - t0Lidar) / 1000000;
-    zPrev = zMeter;
-    tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
-    zMeter = float(lidarZ) * 0.01 - zCalibration;
-    t0Lidar = micros();
-    t1Lidar = micros();
+  // if (t1Lidar - t0Lidar >= 10000) {
+  //   unsigned long t0Lid = micros();
+  //   getLidar();
+  //   unsigned long t1Lid = micros();
 
-    // Preliminary, rough estimations of the missing states
-    // To-do (kalman estimator)
-    zDot = ((zMeter - zPrev) / dtLidar);
+  //   Serial.print("\n Lidar sample took: ");
+  //   Serial.print(t1Lid - t0Lid);
 
-    // Store new state values in senderData struct
-    senderData.xDot      = xDot;
-    senderData.roll      = imu.roll_IMU;
-    senderData.rollDot   = imu.GyroX;
-    senderData.yDot      = yDot;
-    senderData.pitch     = imu.pitch_IMU; 
-    senderData.pitchDot  = imu.GyroY; 
-    senderData.z         = zMeter;
-    senderData.zDot      = zDot;
-  }
-  else {
-    t1Lidar = micros();
-  }
+  //   // Store new state values in senderData struct
+  //   senderData.xDot      = xDot;
+  //   senderData.roll      = imu.roll_IMU;
+  //   senderData.rollDot   = imu.GyroX;
+  //   senderData.yDot      = yDot;
+  //   senderData.pitch     = imu.pitch_IMU; 
+  //   senderData.pitchDot  = imu.GyroY; 
+  //   senderData.z         = zMeter;
+  //   senderData.zDot      = zDot;
+
+  // }
+  // else {
+  //   t1Lidar = micros();
+  // }
 
   // getBarometer();
 

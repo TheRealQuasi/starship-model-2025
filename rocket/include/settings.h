@@ -15,9 +15,10 @@
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 #define DEBUG
 #define DISABLE_COM
-#define TIME_LIMIT 5000//10000
+#define TIME_LIMIT 10000
 #define LOOP_RATE
 // #define ROLLCONTROLLER
+// #define MOTORS_SERVOS
 
 // =================================================================
 
@@ -64,6 +65,7 @@
 #define CAL_BUTTON_DURATION 2000        // How long the botton needs to hold to enter esc calibration [ms]
 
 // ====== I2C interface ======
+#define I2C_CLOCKSPEED 400000
 #define IMU_ADR 0x68 //b1101000 // Sensor adress for I2C communication
 //#define PRESSURE_SENSOR_ADR 0x77 // Default adress and does not need to be given
 
@@ -118,21 +120,21 @@
 
 // Test 1
 // -----------------------------
-#define MADGWICK_FREQUENCY 800          // Main loop frequency (the same as mdagwick filter frequency)
+#define MADGWICK_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
 #define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
-#define IMU_SAMPLE_FREQUENCY 400
-#define CALIBRATION_COUNT 10000 //20000;
-#define WARMUP_TIME 20000
+#define IMU_SAMPLE_FREQUENCY 400//100 // 400
+#define CALIBRATION_COUNT 20000//10000 //20000;
+#define WARMUP_TIME 30000//40000//20000
 
-#define B_MADGWCIK 0.033//0.04 //0.02    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
-#define B_ACCEL 0.25//0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
-#define B_GYRO 0.25//0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
+#define B_MADGWCIK 0.038//0.033// //0.02    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
+#define B_ACCEL 0.35//0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
+#define B_GYRO 0.35//0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
 
 #define ACC_RANGE_SETTING RANGE_3G
-#define ACC_RATE_SETTING ODR_400//ODR_200    // bwp = 145 Hz
+#define ACC_RATE_SETTING ODR_200 //ODR_400 //ODR_200 //ODR_400 //ODR_100//    // bwp = 145 Hz
 
 #define GYRO_RANGE_SETTING RANGE_500
-#define GYRO_RATE_SETTING ODR_400_BW_47
+#define GYRO_RATE_SETTING ODR_200_BW_23 //ODR_400_BW_47 // ODR_400_BW_47 //ODR_100_BW_32
 // -----------------------------
 // Test 1
 

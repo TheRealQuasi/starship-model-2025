@@ -157,24 +157,24 @@ private:
   // ============ Private methods ==============
   // Helper methods 
   // ----------------
-  // float invSqrt(float x) {
-  // return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
-  // }
+  float invSqrt(float x) {
+  return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
+  }
 
   //-------------------------------------------------------------------------------------------
   // Fast inverse square-root
   // See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
 
-  float invSqrt(float x) {
-    float halfx = 0.5f * x;
-    float y = x;
-    long i = *(long*)&y;
-    i = 0x5f3759df - (i>>1);
-    y = *(float*)&i;
-    y = y * (1.5f - (halfx * y * y));
-    y = y * (1.5f - (halfx * y * y));
-    return y;
-  }
+  // float invSqrt(float x) {
+  //   float halfx = 0.5f * x;
+  //   float y = x;
+  //   long i = *(long*)&y;
+  //   i = 0x5f3759df - (i>>1);
+  //   y = *(float*)&i;
+  //   y = y * (1.5f - (halfx * y * y));
+  //   y = y * (1.5f - (halfx * y * y));
+  //   return y;
+  // }
 
   // float invSqrt(float x) {
   //     float halfx = 0.5f * x;
