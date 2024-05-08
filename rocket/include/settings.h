@@ -15,7 +15,7 @@
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 #define DEBUG
 #define DISABLE_COM
-#define TIME_LIMIT 10000
+#define TIME_LIMIT 600000
 #define LOOP_RATE
 // #define ROLLCONTROLLER
 // #define MOTORS_SERVOS

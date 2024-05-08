@@ -150,6 +150,10 @@ void getLidar() {
   zPrev = zMeter;
   // tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
   tfmP.getData(lidarZ);    // Get a frame of data from the TFmini
+  if(tfmP.status == TFMP_CHECKSUM){
+    lidarZ = tfmP.frame[ 2] + ( tfmP.frame[ 3] << 8);
+  }
+
   zMeter = float(float(lidarZ) * float(0.01)) - zCalibration;
 
   if (zMeter < 0.00) {
@@ -393,6 +397,9 @@ void setup() {
 
   // Lidar calibration (measure offset to ground at standstill)
   tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+  if(tfmP.status == TFMP_CHECKSUM){
+    lidarZ = tfmP.frame[ 2] + ( tfmP.frame[ 3] << 8);
+  }
   zMeter = float(lidarZ) * 0.01;
   zCalibration = zMeter;
 
@@ -490,7 +497,7 @@ void loop() {
     ackData.armSwitch = false;
     digitalWrite(RED_LED_PIN, LOW);
 
-    write2SD();
+    //write2SD();
 
     // Print largest deltaT in main loop
     Serial.print("\n\n\n =================================== \n Biggest delta T (bellow 10 ms): ");
@@ -501,7 +508,7 @@ void loop() {
     delay(1000000);
 
     // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
-    while(0 == 0) {}    
+    while(1) {}    
   }
   else {
     tTerminate = micros();
@@ -562,18 +569,18 @@ void loop() {
 
 
   // Get lidar data (100 Hz)
-  // if (t1Lidar - t0Lidar >= 10000) {
-  //   unsigned long t0Lid = micros();
-  //   getLidar();
-  //   unsigned long t1Lid = micros();
+  if (t1Lidar - t0Lidar >= 10000) {
+    unsigned long t0Lid = micros();
+    getLidar();
+    unsigned long t1Lid = micros();
 
-  //   Serial.print("\n Lidar sample took: ");
-  //   Serial.print(t1Lid - t0Lid);
+    Serial.print("\n Lidar sample took: ");
+    Serial.print(t1Lid - t0Lid);
 
-  // }
-  // else {
-  //   t1Lidar = micros();
-  // }
+  }
+  else {
+    t1Lidar = micros();
+  }
 
   // getBarometer();
 
@@ -666,7 +673,7 @@ void loop() {
     senderData.gimb2 = lqrSignals.gimb2;
 
     // Log to SD-card at 100 Hz
-    write2SD();
+    //write2SD();
 
     t0Lqr = micros();
     t1Lqr = micros();
@@ -723,3 +730,4 @@ void loop() {
     imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
   #endif
 }
+
