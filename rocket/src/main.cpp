@@ -106,7 +106,7 @@ String sdFile = "";
 // Buffer for storing data
 String dataBuffer = "";
 // Maximum size of the buffer
-const int BUFFER_SIZE = 56000;//500000; //1000;
+unsigned int bufferSize = 56000;//500000; //1000;
 // Time interval for writing to the SD card (in milliseconds)
 const unsigned long WRITE_INTERVAL = TIME_LIMIT-1;
 // Time of the last write operation
@@ -208,6 +208,9 @@ void initSD(){
   }
 
   sdFile = filename;
+
+  bufferSize = sizeof(senderData) * TIME_LIMIT / 10;
+  Serial.println("Buffersize: " + String(bufferSize));
 }
 
 void write2SD(){
@@ -231,7 +234,7 @@ void write2SD(){
                 String(senderData.gimb2) + "\n";
 
   // If the buffer is full or the write interval has passed, write the buffer to the SD card
-  if (dataBuffer.length() >= BUFFER_SIZE || millis() - lastWriteTime >= WRITE_INTERVAL) {
+  if (dataBuffer.length() >= bufferSize) {
     // Open the file. Note that only one file can be open at a time,
     // so you have to close this one before opening another.
     dataFile = SD.open(sdFile.c_str(), FILE_WRITE);
@@ -567,16 +570,6 @@ void loop() {
   //   Serial.print("\n Lidar sample took: ");
   //   Serial.print(t1Lid - t0Lid);
 
-  //   // Store new state values in senderData struct
-  //   senderData.xDot      = xDot;
-  //   senderData.roll      = imu.roll_IMU;
-  //   senderData.rollDot   = imu.GyroX;
-  //   senderData.yDot      = yDot;
-  //   senderData.pitch     = imu.pitch_IMU; 
-  //   senderData.pitchDot  = imu.GyroY; 
-  //   senderData.z         = zMeter;
-  //   senderData.zDot      = zDot;
-
   // }
   // else {
   //   t1Lidar = micros();
@@ -652,6 +645,16 @@ void loop() {
 
     setServo1Pos(-xGimb);
     setServo2Pos(-yGimb);
+
+    //Store new state values in senderData struct
+    senderData.xDot      = xDot;
+    senderData.roll      = imu.roll_IMU;
+    senderData.rollDot   = imu.GyroX;
+    senderData.yDot      = yDot;
+    senderData.pitch     = imu.pitch_IMU; 
+    senderData.pitchDot  = imu.GyroY; 
+    senderData.z         = zMeter;
+    senderData.zDot      = zDot;
 
     // Store control inputs
     senderData.zRef = lqrSignals.zRef;
