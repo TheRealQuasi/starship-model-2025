@@ -66,8 +66,25 @@ public:
   float q3 = 0.0f;
 
   // ============ Public methods ==============
-  // void loopRate(int freq, float current_time) {
-  void loopRate() {
+  // void loopRate() {
+  //     //DESCRIPTION: Regulate main loop rate to specified frequency in Hz
+  //     /*
+  //     * It's good to operate at a constant loop rate for filters to remain stable and whatnot. Interrupt routines running in the
+  //     * background cause the loop rate to fluctuate. This function basically just waits at the end of every loop iteration until 
+  //     * the correct time has passed since the start of the current loop for the desired loop rate in Hz. 2kHz is a good rate to 
+  //     * be at because the loop nominally will run between 2.8kHz - 4.2kHz. This lets us have a little room to add extra computations
+  //     * and remain above 2kHz, without needing to retune all of our filtering parameters.
+  //     */
+  //     float invFreq = 1.0/freq*1000000.0;
+  //     unsigned long checker = micros();
+
+  //     //Sit in loop until appropriate time has passed
+  //     while (invFreq > (checker - current_time)) {
+  //         checker = micros();
+  //     }
+  // }
+
+  void loopRate_V2() {
       //DESCRIPTION: Regulate main loop rate to specified frequency in Hz
       /*
       * It's good to operate at a constant loop rate for filters to remain stable and whatnot. Interrupt routines running in the
@@ -80,16 +97,17 @@ public:
       unsigned long checker = micros();
 
       //Sit in loop until appropriate time has passed
-      while (invFreq > (checker - current_time)) {
+      while (invFreq >= (checker - prev_time)) {
           checker = micros();
       }
   }
 
-  void timeUpdate() {
-    prev_time = current_time;      
-    current_time = micros();      
-    dt = (current_time - prev_time)/1000000.0;
-  }
+  // void timeUpdate() {
+  //   prev_time = current_time;      
+  //   current_time = micros();      
+  //   dt = (current_time - prev_time)/1000000.0;
+  // }
+
 
   // Inits for the entire IMU object
   void init () {
@@ -100,21 +118,7 @@ public:
     init_BMI088();
     delay(500);
 
-    start_time = millis();
-  }
-
-  // Gets new readings from BMI088 and sends them to the madgwick filter that estimates the attitude
-  void update () {
-    // #ifdef DEBUG
-    //   Serial.println("\t");
-    //   Serial.print("(Xr, Yr):\t");
-    //   Serial.print(roll_IMU);
-    //   Serial.print("\t");
-    //   Serial.print(pitch_IMU);
-    //   Serial.print("\t");
-    //   // Serial.print(yaw_IMU);
-    //   // Serial.print("\n");
-    // #endif
+    start_time = millis();      // <<<<<<<<<<<<<<<------------------------------- To do: Unused variable, fix!!!!!
   }
 
   // Sample IMU data
@@ -122,10 +126,34 @@ public:
     getIMUdata_BMI088();
   }
 
+  void madgwickDeltaCalc() {
+    // Calculate delta t to use in the madgwick filter (delta between iterations, not samples between IMU samples)
+    current_time = micros();
+    dt = (current_time - prev_time)/1000000.0;
+    prev_time = current_time;
+  }
+
+  void IMUSampleDeltaCalc() {
+    // Calculate delta t to use in the madgwick filter (delta between iterations, not samples between IMU samples)
+    current_time = micros();
+    dt = (current_time - prev_time)/1000000.0;
+    prev_time = current_time;      
+  }
+
   // Madgwick filter iteration
   void madgwickStep() {
+    // Regulate madgwick freqcuency
+    #ifdef LOOP_RATE
+      loopRate_V2();
+    #endif
+
+    #ifdef MADGWICK_DELTA
+      madgwickDeltaCalc();
+    #endif
+
     // Estimate states with madgwick filter
     Madgwick6DOF(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
+
   }
 
 void getAttitude(float* roll, float* pitch, float* yaw) {
@@ -138,9 +166,39 @@ void calibrate() {
   calculate_IMU_error_BMI088();
 }
 
-void filterWarmup() {
-  filterIMUWarmup();
-}
+void filterWarmup(unsigned long &t0IMU, unsigned long &t1IMU, float imuSampleInv) {
+  // filterIMUWarmup();
+    //DESCRIPTION: Used to warm up the main loop to allow the madwick filter to converge before commands can be sent to the actuators
+    //Assuming vehicle is powered up on level surface!
+    /*
+      * This function is used on startup to warm up the attitude estimation and is what causes startup to take a few seconds
+      * to boot. 
+      */
+    //Warm up IMU and madgwick filter in simulated main loop
+    #ifdef DEBUG
+      Serial.print("\n \n Warming up madgwick filter \n ------------------------ \n");
+    #endif
+
+    t0IMU = micros();
+    t1IMU = micros();
+    unsigned long tRef = millis();
+
+    while (millis() - tRef < WARMUP_TIME) {
+      if (t1IMU - t0IMU >= imuSampleInv) {
+        getIMUdata_BMI088();
+
+        t0IMU = micros();
+        t1IMU = micros();
+      }
+      else {
+        t1IMU = micros();
+      }
+
+    }
+     
+      madgwickStep();
+
+  }
 
 private:
   // ============ Private attributes ==============
@@ -155,7 +213,7 @@ private:
 
 
   // ============ Private methods ==============
-  // Helper methods 
+  // Helper methods
   // ----------------
   float invSqrt(float x) {
   return 1.0/sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
@@ -393,29 +451,27 @@ private:
   }
 
   // IMU and filter warmup
-  void filterIMUWarmup() {
-    //DESCRIPTION: Used to warm up the main loop to allow the madwick filter to converge before commands can be sent to the actuators
-    //Assuming vehicle is powered up on level surface!
-    /*
-      * This function is used on startup to warm up the attitude estimation and is what causes startup to take a few seconds
-      * to boot. 
-      */
-    //Warm up IMU and madgwick filter in simulated main loop
-    #ifdef DEBUG
-      Serial.print("\n \n Warming up madgwick filter \n ------------------------ \n");
-    #endif
+  // void filterIMUWarmup() {
+  //   //DESCRIPTION: Used to warm up the main loop to allow the madwick filter to converge before commands can be sent to the actuators
+  //   //Assuming vehicle is powered up on level surface!
+  //   /*
+  //     * This function is used on startup to warm up the attitude estimation and is what causes startup to take a few seconds
+  //     * to boot. 
+  //     */
+  //   //Warm up IMU and madgwick filter in simulated main loop
+  //   #ifdef DEBUG
+  //     Serial.print("\n \n Warming up madgwick filter \n ------------------------ \n");
+  //   #endif
 
-    for (int i = 0; i <= WARMUP_TIME; i++) {
-      prev_time = current_time;      
-      current_time = micros();      
-      dt = (current_time - prev_time)/1000000.0; 
-      getIMUdata_BMI088();
-      Madgwick6DOF(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, dt);
-      loopRate(); //do not exceed 2000Hz
-    }
-  }
+  //   for (int i = 0; i <= WARMUP_TIME; i++) {
+  //     // prev_time = current_time;      
+  //     // current_time = micros();      
+  //     // dt = (current_time - prev_time)/1000000.0; 
+  //     getIMUdata_BMI088();
+  //     Madgwick6DOF(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, dt);
+  //   }
 
-  // Get methods
+
   // Inits BMI088 by connecting via I2C, setting predefined settings and checking connection
   void init_BMI088() {
     while (1) {

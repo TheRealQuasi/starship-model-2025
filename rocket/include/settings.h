@@ -13,12 +13,12 @@
 // Enable / disable settings
 // =================================================================
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
-#define DEBUG
+// #define DEBUG
 #define DISABLE_COM
-#define TIME_LIMIT 600000
+#define TIME_LIMIT 5000
 #define LOOP_RATE
 // #define ROLLCONTROLLER
-// #define MOTORS_SERVOS
+#define MOTORS_SERVOS
 
 // =================================================================
 
@@ -36,7 +36,7 @@
 #define MOTOR_2_PIN 8  //5
 #define SERVO_1_PIN 2
 #define SERVO_2_PIN 3
-#define CAL_BUTTON  37//6
+#define CAL_BUTTON  37 //6
 #define RED_LED_PIN 41 
 
 // // ===== Radio pin assignment =====
@@ -59,7 +59,7 @@
 #define SPEED_MIN 1100                  // Lowest allowed motor speed
 #define SERVO_1_HOME 55 //82;          // 0 position [degrees]
 #define SERVO_2_HOME 71 //107; // 88;  // 0 position[degrees]
-#define MAX_GIMBAL 30
+#define MAX_GIMBAL 20
 
 // ====== Ground control specs ======
 #define CAL_BUTTON_DURATION 2000        // How long the botton needs to hold to enter esc calibration [ms]
@@ -120,21 +120,22 @@
 
 // Test 1
 // -----------------------------
+#define MADGWICK_DELTA                   // If defined, the madgwick dt = time between madgwick calls - If not defined, madgwick dt = IMU sample dt
 #define MADGWICK_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
 #define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
 #define IMU_SAMPLE_FREQUENCY 400//100 // 400
 #define CALIBRATION_COUNT 20000//10000 //20000;
-#define WARMUP_TIME 30000//40000//20000
+#define WARMUP_TIME 20000//40000//20000
 
 #define B_MADGWCIK 0.038//0.033// //0.02    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
 #define B_ACCEL 0.35//0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
 #define B_GYRO 0.35//0.25//0.1                         // Gyro LP filter paramter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
 
 #define ACC_RANGE_SETTING RANGE_3G
-#define ACC_RATE_SETTING ODR_200 //ODR_400 //ODR_200 //ODR_400 //ODR_100//    // bwp = 145 Hz
+#define ACC_RATE_SETTING ODR_400 //ODR_200 //ODR_400 //ODR_100//    // bwp = 145 Hz
 
 #define GYRO_RANGE_SETTING RANGE_500
-#define GYRO_RATE_SETTING ODR_200_BW_23 //ODR_400_BW_47 // ODR_400_BW_47 //ODR_100_BW_32
+#define GYRO_RATE_SETTING ODR_400_BW_47 // ODR_200_BW_23 // ODR_400_BW_47 //ODR_100_BW_32
 // -----------------------------
 // Test 1
 

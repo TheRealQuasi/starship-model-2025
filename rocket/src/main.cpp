@@ -67,9 +67,8 @@ TFMPI2C tfmP;         // Create a TFMini-Plus I2C object
 float zMeter = 0;
 float zCalibration = 0;
 int16_t lidarZ = 0;       // Distance to object in centimeters
-int16_t lidarFlux = 0;       // Signal strength or quality of return signal
-int16_t lidarTemp = 0;       // Internal temperature of Lidar sensor chip
-
+// int16_t lidarFlux = 0;       // Signal strength or quality of return signal
+// int16_t lidarTemp = 0;       // Internal temperature of Lidar sensor chip
 float zPrev = 0;       // Distance to object in centimeters
 
 // Servo control variables
@@ -120,33 +119,33 @@ float maxDeltaT = 0; // Maximum recorded iteration step time [us]
 //  Functions
 // =============================================================================================
 
-// // Barometer sampling
-// void getBarometer() {
-//   // Read barometer data
-//   float psReturn = readPS();
-//   if (psReturn == (-2)){
-//     #ifdef DEBUG
-//       Serial.println("No data to be found yet. Please wait...");
-//     #endif
-//   }
-//   else if (psReturn == (-1)){
-//     #ifdef DEBUG
-//       Serial.println("Error reading the pressure sensor. Please check the wiring and try again.");
-//     #endif
-//   }
-//   else{
-//     #ifdef DEBUG
-//       Serial.print("Height: ");
-//       Serial.print(psReturn);
-//       Serial.println(" m");
-//     #endif
+/* // Barometer sampling
+void getBarometer() {
+  // Read barometer data
+  float psReturn = readPS();
+  if (psReturn == (-2)){
+    #ifdef DEBUG
+      Serial.println("No data to be found yet. Please wait...");
+    #endif
+  }
+  else if (psReturn == (-1)){
+    #ifdef DEBUG
+      Serial.println("Error reading the pressure sensor. Please check the wiring and try again.");
+    #endif
+  }
+  else{
+    #ifdef DEBUG
+      Serial.print("Height: ");
+      Serial.print(psReturn);
+      Serial.println(" m");
+    #endif
 
-//     sensorData.psHeight = psReturn;
-//   }
-// }
+    sensorData.psHeight = psReturn;
+  }
+} */
 
 void getLidar() {
-  float dtLidar = (t1Lidar - t0Lidar) / 1000000;
+  float dtLidar = 0.01;//;(t1Lidar - t0Lidar) / 1000000;
   zPrev = zMeter;
   // tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
   tfmP.getData(lidarZ);    // Get a frame of data from the TFmini
@@ -154,19 +153,29 @@ void getLidar() {
     lidarZ = tfmP.frame[ 2] + ( tfmP.frame[ 3] << 8);
   }
 
-  zMeter = float(float(lidarZ) * float(0.01)) - zCalibration;
+  // Subtract distance from lidar mounting point to bottom of the rocket
+  zMeter = float(float(float(lidarZ) * float(0.01)) - zCalibration);
 
+  // Constrain to prevent data type issues / very snall numbers
   if (zMeter < 0.00) {
     zMeter = 0.00;
   }
-  
-  // Get distance to ground
-  // if (abs(imu.roll_IMU) < 80 && abs(imu.pitch_IMU) < 80) {
-  //   zMeter = sqrt(zMeter * zMeter * (1 - pow( sin(imu.roll_IMU), 2 ) - pow( sin(imu.pitch_IMU), 2 )) );
-  // }
-  // Preliminary, rough estimations of the missing states
+
+  // Get distance to ground (taking roll and pitch of the rocket into account)
+  if (abs(imu.roll_IMU) < 80 && abs(imu.pitch_IMU) < 80) {
+    zMeter = sqrt(zMeter * zMeter * (1 - pow( sin(imu.roll_IMU), 2 ) - pow( sin(imu.pitch_IMU), 2 )) );
+  }
+
+  // Preliminary, rough estimations of zDot
   // To-do (kalman estimator)
-  zDot = ((zMeter - zPrev) / dtLidar);
+  zDot = float((zMeter - zPrev) / dtLidar);
+  if (zDot < 0.001) {
+    zDot = 0.0;
+  }
+
+  else if (zDot > 50) {
+    zDot = 0.0;
+  }
 }
 
 
@@ -238,7 +247,7 @@ void write2SD(){
                 String(senderData.gimb2) + "\n";
 
   // If the buffer is full or the write interval has passed, write the buffer to the SD card
-  if (dataBuffer.length() >= bufferSize) {
+  if (dataBuffer.length() >= bufferSize) { // || (micros() - t0 >= TIME_LIMIT - 1)) {
     // Open the file. Note that only one file can be open at a time,
     // so you have to close this one before opening another.
     dataFile = SD.open(sdFile.c_str(), FILE_WRITE);
@@ -307,11 +316,7 @@ void redLedWarningV2() {
     }
 
     // Madgwick step    
-    imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
     imu.madgwickStep();
-    #ifdef LOOP_RATE
-      imu.loopRate();
-    #endif
   }
 }
 
@@ -332,8 +337,6 @@ void setup() {
     Serial.println("");
     Serial.println("Initializing I2C bus...");
   #endif
-
-  // Serial.begin(BAUDRATE); 
 
   // =================== Radio setup =====================
 
@@ -395,8 +398,8 @@ void setup() {
   Wire.begin();
   Wire.setClock(I2C_CLOCKSPEED);
 
-  // Lidar calibration (measure offset to ground at standstill)
-  tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
+  // Lidar calibration (measure offset to ground at standstill)   <<<<--------------------------To do: Add calibration by avragin multiple samples
+  tfmP.getData(lidarZ);    // Get a frame of data from the TFmini
   if(tfmP.status == TFMP_CHECKSUM){
     lidarZ = tfmP.frame[ 2] + ( tfmP.frame[ 3] << 8);
   }
@@ -439,15 +442,15 @@ void setup() {
 
   // Allow the madgwick filter to start converging on an estimate before flight
   // (This needs to happen without other uninteruptions right before entering the loop)
-  imu.filterWarmup();
+  imu.filterWarmup(t0IMU, t1IMU, imuSampleInv);
 
   #ifdef DEBUG
     Serial.println("Init complete!");
   #endif
 
-  #ifndef DISABLE_COM
-    transmitState(SYSTEM_READY, ackData);
-  #endif
+  // #ifndef DISABLE_COM
+  //   transmitState(SYSTEM_READY, ackData);
+  // #endif
 
   // Arm rocket
   #ifdef DEBUG
@@ -458,22 +461,24 @@ void setup() {
   // redLedWarningV2();
 
   ackData.armSwitch = true;
+  digitalWrite(RED_LED_PIN, HIGH);
 
   // Set start time
   t0 = micros();
   tTerminate = micros();
 
+  t0IMU = micros();
+  t1IMU = micros() + imuSampleInv;   // This forces IMU sample in the firs loop iteration
+
   t0Lqr = micros();
   t1Lqr = micros();
 
-  t0Lidar = micros();
-  t1Lidar = micros();
+  // t0Lidar = micros();
+  // t1Lidar = micros();
 
   tCheck0 = micros();
   tCheck1 = micros();
 
-  t0IMU = micros();
-  t1IMU = micros();
 }
 
 
@@ -497,7 +502,7 @@ void loop() {
     ackData.armSwitch = false;
     digitalWrite(RED_LED_PIN, LOW);
 
-    //write2SD();
+    write2SD();
 
     // Print largest deltaT in main loop
     Serial.print("\n\n\n =================================== \n Biggest delta T (bellow 10 ms): ");
@@ -522,33 +527,39 @@ void loop() {
   //   digitalWrite(RED_LED_PIN, HIGH);
   // }
 
-  // // Check emergency stop
-  // #ifdef DISABLE_COM
-  //   if (!digitalRead(CAL_BUTTON)) {
-  //     ackData.armSwitch = false;
-  //     motorsWrite(1, 1100, ackData);
-  //     motorsWrite(2, 1100, ackData);
+  // Check emergency stop
+  #ifdef DISABLE_COM
+    if (!digitalRead(CAL_BUTTON)) {
+      ackData.armSwitch = false;
+      motorsWrite(1, 1100, ackData);
+      motorsWrite(2, 1100, ackData);
 
-  //     // Do nothing until the teensy is reset
-  //     delay(1000000);
+      // Do nothing until the teensy is reset
+      delay(1000000);
 
-  //     // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
-  //     while(0 == 0) {}    
-  //   }
-  // #endif
+      // Infinite loop with do nothing (arduino can't do exit(0) since the loop() is infinite)
+      while(1) {}    
+    }
+  #endif
 
   // ======================================================
   // ================ Sensors and filters =================
   // ======================================================
   
+  // Check inverse sample frequency (I2C bus is too slow to allow for sampling each madgwick step)
   if (t1IMU - t0IMU >= imuSampleInv) {
-    // Read IMU
-    unsigned long t0Madg = micros();
-    imu.sample();
-    unsigned long t1Madg = micros();
+    // Calculate delta t between samples (uesd when integrating the signals in the madgwick filter)
+    #ifndef MADGWICK_DELTA
+      IMUSampleDeltaCalc();
+    #endif
 
-    Serial.print("\n IMU sample took: ");
-    Serial.print(t1Madg - t0Madg);
+    // Read IMU
+    // unsigned long t0Madg = micros();
+    imu.sample();
+    // unsigned long t1Madg = micros();
+
+    // Serial.print("\n IMU sample took: ");
+    // Serial.print(t1Madg - t0Madg);
 
     t0IMU = micros();
     t1IMU = micros();
@@ -557,30 +568,31 @@ void loop() {
     t1IMU = micros();
   }
 
+  // ================ Attitude estimation ================
   // Madgwick iteration
-  imu.timeUpdate();                         // Record time at start of loop iteration (used in madgwick filters)
-
   imu.madgwickStep();
 
-  // Preliminary, rough estimations of the missing states
+  // Preliminary, rough estimations of the missing states (xDot, yDot)
   // To-do (kalman estimator)
   xDot = (imu.AccX + imu.AccX_prev) * imu.dt;
   yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
 
 
-  // Get lidar data (100 Hz)
-  if (t1Lidar - t0Lidar >= 10000) {
-    unsigned long t0Lid = micros();
-    getLidar();
-    unsigned long t1Lid = micros();
+  // // Get lidar data (100 Hz)
+  // if (t1Lidar - t0Lidar >= 10000) {
+  //   // unsigned long t0Lid = micros();
+  //   getLidar();
+  //   // unsigned long t1Lid = micros();
 
-    Serial.print("\n Lidar sample took: ");
-    Serial.print(t1Lid - t0Lid);
+  //   // Serial.print("\n Lidar sample took: ");
+  //   // Serial.print(t1Lid - t0Lid);
+  //   t0Lidar = micros();
+  //   t1Lidar = micros();
 
-  }
-  else {
-    t1Lidar = micros();
-  }
+  // }
+  // else {
+  //   t1Lidar = micros();
+  // }
 
   // getBarometer();
 
@@ -604,6 +616,9 @@ void loop() {
   
   // Run control-update at predefined frequency
   if (t1Lqr - t0Lqr >= controllerFrekvInv) {
+    // Get lidar data at the same frequency as the controller
+    getLidar();
+
     #ifdef DEBUG
       Serial.print("\n z = ");
       Serial.print(zMeter);
@@ -634,10 +649,12 @@ void loop() {
       Serial.print("   PWM: ");
       Serial.print(lqrSignals.motor1Speed);
       Serial.print("\t ");
-      Serial.print("t: ");
-      Serial.print(currentTime);
+      // Serial.print("t: ");
+      // Serial.print(currentTime);
       Serial.print("   dt: ");
       Serial.print(t1Lqr - t0Lqr);
+      Serial.print("   dt Madgwick: ");
+      Serial.print(imu.dt)
       
     #endif
 
@@ -672,8 +689,8 @@ void loop() {
     senderData.gimb1 = lqrSignals.gimb1;
     senderData.gimb2 = lqrSignals.gimb2;
 
-    // Log to SD-card at 100 Hz
-    //write2SD();
+    // Log to SD-card at CONTROLLER_FREQUENCY [Hz]
+    write2SD();
 
     t0Lqr = micros();
     t1Lqr = micros();
@@ -723,11 +740,6 @@ void loop() {
         // Serial.print(bigDeltaT);
         // Serial.print(" [us] \n \n");
     }
-  #endif
-
-  // Regulate looprate to predefined loop frequency (the teeensy runs much faster then what is suitable for this)
-  #ifdef LOOP_RATE
-    imu.loopRate();     // <<<<<<<<<<<<<<<------------------------------------------------------------------------------ To do (Gunnar): Tweak this to prevent lag when transmitting data etc.
   #endif
 }
 

@@ -127,7 +127,6 @@ void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2,
     // Calculate control singals
     U = K * error;
 
-    // F = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
     
     // LQR force output in Netons ( + gravitational acceleration to maintain altitude) 
     float F = float(U(0)) + 2.5 * 9.82;
@@ -150,9 +149,11 @@ void lqr(float x_dot, float gamma1, float gamma1_dot, float y_dot, float gamma2,
     // Convert from newtons to grams
     F *=  101.83;
 
+    // Apply motor mapping to get required motor speed
+    // F = -9*(10**-5)*x**4+0.0163*x**3-0.0757*x**2+38.23*x-329.1
     double motorRate = calculateRPM(F);
 
-    int pwm = map(motorRate, 0, 100, 1100, 1940);
+    int pwm = map(motorRate, 0.0, 100.0, 1100, 1940);
 
     if (pwm > SPEED_LIMIT) {
       pwm = SPEED_LIMIT;
