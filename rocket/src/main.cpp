@@ -67,6 +67,7 @@ TFMPI2C tfmP;         // Create a TFMini-Plus I2C object
 float zMeter = 0;
 float zCalibration = 0;
 int16_t lidarZ = 0;       // Distance to object in centimeters
+int16_t lidarZPRev = 0;
 // int16_t lidarFlux = 0;       // Signal strength or quality of return signal
 // int16_t lidarTemp = 0;       // Internal temperature of Lidar sensor chip
 float zPrev = 0;       // Distance to object in centimeters
@@ -147,10 +148,15 @@ void getBarometer() {
 void getLidar() {
   float dtLidar = 0.01;//;(t1Lidar - t0Lidar) / 1000000;
   zPrev = zMeter;
+  lidarZPRev = lidarZ;
   // tfmP.getData(lidarZ, lidarFlux, lidarTemp);    // Get a frame of data from the TFmini
   tfmP.getData(lidarZ);    // Get a frame of data from the TFmini
-  if(tfmP.status == TFMP_CHECKSUM){
+  if (tfmP.status == TFMP_CHECKSUM){
     lidarZ = tfmP.frame[ 2] + ( tfmP.frame[ 3] << 8);
+  }
+
+  if (isnan(lidarZ)) {
+    lidarZ = lidarZPRev;
   }
 
   // Subtract distance from lidar mounting point to bottom of the rocket
@@ -162,9 +168,9 @@ void getLidar() {
   }
 
   // Get distance to ground (taking roll and pitch of the rocket into account)
-  if (abs(imu.roll_IMU) < 80 && abs(imu.pitch_IMU) < 80) {
-    zMeter = sqrt(zMeter * zMeter * (1 - pow( sin(imu.roll_IMU), 2 ) - pow( sin(imu.pitch_IMU), 2 )) );
-  }
+  // if (abs(imu.roll_IMU) < 80 && abs(imu.pitch_IMU) < 80) {
+  //   zMeter = sqrt(zMeter * zMeter * (1 - pow( sin(imu.roll_IMU), 2 ) - pow( sin(imu.pitch_IMU), 2 )) );
+  // }
 
   // Preliminary, rough estimations of zDot
   // To-do (kalman estimator)
@@ -222,7 +228,7 @@ void initSD(){
 
   sdFile = filename;
 
-  bufferSize = sizeof(senderData) * TIME_LIMIT / 10;
+  // bufferSize = sizeof(senderData) * TIME_LIMIT / 10;                                 //<<<<<<<<<<<<<<-----------------Uncomment!!!
   Serial.println("Buffersize: " + String(bufferSize));
 }
 
@@ -346,14 +352,14 @@ void setup() {
   #endif
 
   // =================== Servo and motor setup ===================
+  // Configure digital input for calButton
+  pinMode(CAL_BUTTON, INPUT_PULLUP);
+
+  // Configure digital putput for red led
+  pinMode(RED_LED_PIN, OUTPUT);
 
   #ifdef MOTORS_SERVOS
-    // Configure digital input for calButton
-    pinMode(CAL_BUTTON, INPUT_PULLUP);
-
-    // Configure digital putput for red led
-    pinMode(RED_LED_PIN, OUTPUT);
-    
+   
     // Initialize servos and ESCs (motors)
     #ifndef DISABLE_COM
       transmitState(SERVO_AND_MOTOR_INIT, ackData);
@@ -468,7 +474,7 @@ void setup() {
   tTerminate = micros();
 
   t0IMU = micros();
-  t1IMU = micros() + imuSampleInv;   // This forces IMU sample in the firs loop iteration
+  t1IMU = micros();   // This forces IMU sample in the firs loop iteration
 
   t0Lqr = micros();
   t1Lqr = micros();
@@ -478,6 +484,9 @@ void setup() {
 
   tCheck0 = micros();
   tCheck1 = micros();
+
+  imu.current_time = micros();
+  imu.prev_time = micros();
 
 }
 
@@ -550,7 +559,7 @@ void loop() {
   if (t1IMU - t0IMU >= imuSampleInv) {
     // Calculate delta t between samples (uesd when integrating the signals in the madgwick filter)
     #ifndef MADGWICK_DELTA
-      IMUSampleDeltaCalc();
+      imu.IMUSampleDeltaCalc();
     #endif
 
     // Read IMU
@@ -578,21 +587,21 @@ void loop() {
   yDot = (imu.AccY + imu.AccY_prev) * imu.dt;
 
 
-  // // Get lidar data (100 Hz)
-  // if (t1Lidar - t0Lidar >= 10000) {
-  //   // unsigned long t0Lid = micros();
-  //   getLidar();
-  //   // unsigned long t1Lid = micros();
+  // Get lidar data (100 Hz)
+  if (t1Lidar - t0Lidar >= 10000) {
+    // unsigned long t0Lid = micros();
+    getLidar();
+    // unsigned long t1Lid = micros();
 
-  //   // Serial.print("\n Lidar sample took: ");
-  //   // Serial.print(t1Lid - t0Lid);
-  //   t0Lidar = micros();
-  //   t1Lidar = micros();
+    // Serial.print("\n Lidar sample took: ");
+    // Serial.print(t1Lid - t0Lid);
+    t0Lidar = micros();
+    t1Lidar = micros();
 
-  // }
-  // else {
-  //   t1Lidar = micros();
-  // }
+  }
+  else {
+    t1Lidar = micros();
+  }
 
   // getBarometer();
 
@@ -600,24 +609,12 @@ void loop() {
   // ================ Control ==================
   // ===========================================
 
-  // =============== PID =================
-  // PID altitude
-  // motorSpeed = altitude_pid(zMeter*0.01, ALT_REF);
-  // Serial.println(motorSpeed);
-
-  // PID angle 
-  // yGimb = angleControlY(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
-  // xGimb = angleControlX(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
-
-  // PID actuation
-  // motorsWrite(motorSpeed, ackData);
-
   // =============== LQR control =================
   
   // Run control-update at predefined frequency
   if (t1Lqr - t0Lqr >= controllerFrekvInv) {
     // Get lidar data at the same frequency as the controller
-    getLidar();
+    // getLidar();
 
     #ifdef DEBUG
       Serial.print("\n z = ");
@@ -635,6 +632,19 @@ void loop() {
     // Calculate current time (passed since t0)
     float currentTime = (micros() - t0) / 1000000;
     senderData.timeStamp = micros() - t0;
+
+    // // =============== PID =================
+    // // PID altitude
+    // motorSpeed = altitude_pid(zMeter*0.01, ALT_REF);
+    // // Serial.println(motorSpeed);
+
+    // // PID angle 
+    // yGimb = angleControlY(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
+    // xGimb = angleControlX(imu.pitch_IMU, imu.roll_IMU, -MAX_GIMBAL, MAX_GIMBAL);
+
+    // // PID actuation
+    // motorsWrite(1, motorSpeed, ackData);
+    // motorsWrite(2, motorSpeed, ackData);
 
     lqr(xDot, imu.roll_IMU, imu.GyroX, yDot, imu.pitch_IMU, imu.GyroY, zMeter, zDot, currentTime, lqrSignals);
     xGimb = lqrSignals.gimb1;
@@ -654,7 +664,7 @@ void loop() {
       Serial.print("   dt: ");
       Serial.print(t1Lqr - t0Lqr);
       Serial.print("   dt Madgwick: ");
-      Serial.print(imu.dt)
+      Serial.print(imu.dt);
       
     #endif
 
@@ -685,9 +695,12 @@ void loop() {
     senderData.zDotRef = lqrSignals.zDotRef;
     
     // Store control outputs in senderData struct
-    senderData.motorSpeed = lqrSignals.motor1Speed;
-    senderData.gimb1 = lqrSignals.gimb1;
-    senderData.gimb2 = lqrSignals.gimb2;
+    // senderData.motorSpeed = lqrSignals.motor1Speed;
+    // senderData.gimb1 = lqrSignals.gimb1;
+    // senderData.gimb2 = lqrSignals.gimb2;
+    senderData.motorSpeed = motorSpeed;
+    senderData.gimb1 = xGimb;
+    senderData.gimb2 = yGimb;
 
     // Log to SD-card at CONTROLLER_FREQUENCY [Hz]
     write2SD();

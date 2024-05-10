@@ -15,7 +15,7 @@
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 // #define DEBUG
 #define DISABLE_COM
-#define TIME_LIMIT 5000
+#define TIME_LIMIT 10000
 #define LOOP_RATE
 // #define ROLLCONTROLLER
 #define MOTORS_SERVOS
@@ -31,7 +31,7 @@
 //  Pin assignments 
 // =============================================================================================
 
-// // ====== Motor and servo pin assignment ======
+// ====== Motor and servo pin assignment ======
 #define MOTOR_1_PIN 7  //4
 #define MOTOR_2_PIN 8  //5
 #define SERVO_1_PIN 2
@@ -59,7 +59,7 @@
 #define SPEED_MIN 1100                  // Lowest allowed motor speed
 #define SERVO_1_HOME 55 //82;          // 0 position [degrees]
 #define SERVO_2_HOME 71 //107; // 88;  // 0 position[degrees]
-#define MAX_GIMBAL 20
+#define MAX_GIMBAL 30
 
 // ====== Ground control specs ======
 #define CAL_BUTTON_DURATION 2000        // How long the botton needs to hold to enter esc calibration [ms]
@@ -75,7 +75,7 @@
 // Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
 #define RF24_SPEED RF24_2MBPS
 // What radio channel to use (0-127). The same on all nodes must match exactly.
-#define RF24_CHANNEL 124 
+#define RF24_CHANNEL 124
 
 // #define TX_INTERVAL_MILLIS 
 
@@ -120,12 +120,12 @@
 
 // Test 1
 // -----------------------------
-#define MADGWICK_DELTA                   // If defined, the madgwick dt = time between madgwick calls - If not defined, madgwick dt = IMU sample dt
+// #define MADGWICK_DELTA                   // If defined, the madgwick dt = time between madgwick calls - If not defined, madgwick dt = IMU sample dt
 #define MADGWICK_FREQUENCY 2000          // Main loop frequency (the same as mdagwick filter frequency)
 #define CONTROLLER_FREQUENCY 100         // The frequency at which the LQR recalculates the control values
 #define IMU_SAMPLE_FREQUENCY 400//100 // 400
-#define CALIBRATION_COUNT 20000//10000 //20000;
-#define WARMUP_TIME 20000//40000//20000
+#define CALIBRATION_COUNT 60000//10000 //20000;
+#define WARMUP_TIME 10000//25000//40000//20000
 
 #define B_MADGWCIK 0.038//0.033// //0.02    // Madgwick filter parameter (tuned for MPU MPU6050 or MPU9250)
 #define B_ACCEL 0.35//0.25//0.14                       // Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)

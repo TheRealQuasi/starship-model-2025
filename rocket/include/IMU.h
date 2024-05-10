@@ -111,7 +111,7 @@ public:
 
   // Inits for the entire IMU object
   void init () {
-    #ifdef DEBUG
+    #ifdef DEBUGIMUSampleDeltaCalc
       Serial.print("\n IMU init started \n");
     #endif
    
@@ -129,7 +129,7 @@ public:
   void madgwickDeltaCalc() {
     // Calculate delta t to use in the madgwick filter (delta between iterations, not samples between IMU samples)
     current_time = micros();
-    dt = (current_time - prev_time)/1000000.0;
+    dt = float((current_time - prev_time)/1000000.0);
     prev_time = current_time;
   }
 
@@ -137,7 +137,7 @@ public:
     // Calculate delta t to use in the madgwick filter (delta between iterations, not samples between IMU samples)
     current_time = micros();
     dt = (current_time - prev_time)/1000000.0;
-    prev_time = current_time;      
+    prev_time = current_time;
   }
 
   // Madgwick filter iteration
@@ -180,7 +180,7 @@ void filterWarmup(unsigned long &t0IMU, unsigned long &t1IMU, float imuSampleInv
     #endif
 
     t0IMU = micros();
-    t1IMU = micros();
+    t1IMU = micros() + imuSampleInv;
     unsigned long tRef = millis();
 
     while (millis() - tRef < WARMUP_TIME) {
@@ -193,11 +193,8 @@ void filterWarmup(unsigned long &t0IMU, unsigned long &t1IMU, float imuSampleInv
       else {
         t1IMU = micros();
       }
-
-    }
-     
       madgwickStep();
-
+    }
   }
 
 private:

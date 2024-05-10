@@ -22,12 +22,12 @@ double rot_previous_error;
 //PID constants-------------------------------------------------------------------------------------
 
 // pitch pid gain values
-double tv_pitch_Kp = 1;//3.000;
-double tv_pitch_Ki = 0.0;//0.080;
+double tv_pitch_Kp = 2;//0.5;//3.000;
+double tv_pitch_Ki = 0.01;//0.080;
 double tv_pitch_Kd = 10; //55.00;
 
-double tv_stability_Kp =1; //3.000;
-double tv_stability_Ki = 0.0;//0.080;
+double tv_stability_Kp =0.5; //3.000;
+double tv_stability_Ki = 0.01;//0.080;
 double tv_stability_Kd = 10;//55.00;
 
 
@@ -84,7 +84,6 @@ double thrust_vector_pid_roll(double dir, double reference_dir, int min_servo_an
 
 
 //Main_control_function----------------------------------------------------------------------------------
-// Måste fixa returnen här ifrån så vi får de på det viset ni vill, sa flickan då
 int angleControlY(int pitch_filtered, int roll_filtered, int min_servo_angle_tv_stab, int max_servo_angle_tv_stab) {
   float yGimb = float(thrust_vector_pid_pitch(pitch_filtered, 0 , min_servo_angle_tv_stab ,max_servo_angle_tv_stab));
   return yGimb;
