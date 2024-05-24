@@ -1,12 +1,14 @@
-# Starship Project
+# Starship model Project 2024
 
-This project involves programming a Teensy 4.1 microcontroller using PlatformIO in Visual Studio Code.
+This project is part of a bachelor theisis on Chalmers Technical University.
+
+The project involves programming a Teensy 4.1 microcontroller using PlatformIO in Visual Studio Code.
 
 ## Setup
 
 1. Install Visual Studio Code.
 2. Install the PlatformIO extension in Visual Studio Code.
-3. Open the `microcontroller` folder in Visual Studio Code. PlatformIO should automatically detect all necessary files.
+3. Open the `rocket` folder in Visual Studio Code. PlatformIO should automatically detect all necessary files.
 
 ## Building and Programming
 
@@ -23,4 +25,4 @@ This project depends on the following libraries:
 - `mbed-syundo0730/I2Cdev@0.0.0+sha.3aa973ebe3e5`
 - `infineon/XENSIV Digital Pressure Sensor@^1.0.0`
 
-Please ensure these libraries are installed with platformIO before building the project.
+Please ensure these libraries are installed with platformIO before building the project. They should however be installed automatically when opening the project.
