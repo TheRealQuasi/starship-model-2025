@@ -231,7 +231,7 @@ void initSD(){
 
   sdFile = filename;
 
-  // bufferSize = sizeof(senderData) * TIME_LIMIT / 10;                                 //<<<<<<<<<<<<<<-----------------Uncomment!!!
+  bufferSize = sizeof(senderData) * TIME_LIMIT / 10;                                 //<<<<<<<<<<<<<<-----------------Uncomment!!!
   Serial.println("Buffersize: " + String(bufferSize));
 }
 
