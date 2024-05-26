@@ -15,7 +15,7 @@
 // Change debug mode | COMMENT OUT WHEN NO COMPUTER CONNECTED
 // #define DEBUG
 #define DISABLE_COM
-#define TIME_LIMIT 10000
+#define TIME_LIMIT 8000
 #define LOOP_RATE
 // #define ROLLCONTROLLER
 #define MOTORS_SERVOS
@@ -29,13 +29,13 @@
 
 // =============================================================================================
 //  Pin assignments 
-// =============================================================================================
+// ===============z==============================================================================
 
 // ====== Motor and servo pin assignment ======
-#define MOTOR_1_PIN 7  //4
-#define MOTOR_2_PIN 8  //5
-#define SERVO_1_PIN 2
-#define SERVO_2_PIN 3
+#define MOTOR_1_PIN 7  //4  // Lower motor
+#define MOTOR_2_PIN 8  //5  // Upper motor
+#define SERVO_1_PIN 2       // Lower servo (xRot = imu.roll_IMU)
+#define SERVO_2_PIN 3       // Upper servo (yRot = imu.pitch_IMU)
 #define CAL_BUTTON  37 //6
 #define RED_LED_PIN 41 
 

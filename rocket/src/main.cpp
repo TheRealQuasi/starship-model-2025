@@ -77,6 +77,9 @@ float xGimb = 0;
 float yGimb = 0;
 float motorSpeed = 1140;
 
+// Variable storing yaw-angle at t0
+float yawZero = 0;
+
 
 // Timing variables
 unsigned long t0;
@@ -169,7 +172,7 @@ void getLidar() {
 
   // Get distance to ground (taking roll and pitch of the rocket into account)
   // if (abs(imu.roll_IMU) < 80 && abs(imu.pitch_IMU) < 80) {
-  //   zMeter = sqrt(zMeter * zMeter * (1 - pow( sin(imu.roll_IMU), 2 ) - pow( sin(imu.pitch_IMU), 2 )) );
+  //   zMeter = sqrt(zMeter * zMeter * abs(1 - pow( sin(imu.roll_IMU), 2 ) - pow( sin(imu.pitch_IMU), 2 )) );      // ToDo <<<<<<<<<<------------------ Verify that this works in all orientations
   // }
 
   // Preliminary, rough estimations of zDot
@@ -450,6 +453,10 @@ void setup() {
   // (This needs to happen without other uninteruptions right before entering the loop)
   imu.filterWarmup(t0IMU, t1IMU, imuSampleInv);
 
+  // Store yaw (roll) value at t0 for roll control
+  yawZero = imu.yaw_IMU;
+
+
   #ifdef DEBUG
     Serial.println("Init complete!");
   #endif
@@ -668,19 +675,25 @@ void loop() {
       
     #endif
 
-    motorsWrite(1, lqrSignals.motor1Speed, ackData);
+    // IF roll-control enabled, calculate RPM-diff for lower motor (motor1)
     #ifdef ROLLCONTROLLER
-      motorsWrite(2, roll_p_controller(imu.yaw_IMU, lqrSignals.motor2Speed), ackData);
+      lqrSignals.motor1Speed = roll_p_controller(yawZero, imu.yaw_IMU, lqrSignals.motor2Speed);
     #endif
 
+    // IF roll-control disabled, set motor speeds equal
     #ifndef ROLLCONTROLLER
-      motorsWrite(2, lqrSignals.motor1Speed, ackData);
+      lqrSignals.motor1Speed = lqrSignals.motor2Speed;
     #endif
 
+    // Set motor speeds to ESCs
+    motorsWrite(2, lqrSignals.motor2Speed, ackData);
+    motorsWrite(1, lqrSignals.motor1Speed, ackData);
+
+    // Set gimbal angles to servos
     setServo1Pos(-xGimb);
     setServo2Pos(-yGimb);
 
-    //Store new state values in senderData struct
+    // Store new state values in senderData struct
     senderData.xDot      = xDot;
     senderData.roll      = imu.roll_IMU;
     senderData.rollDot   = imu.GyroX;
