@@ -6,7 +6,7 @@
 #include <Arduino.h>
 #include <settings.h>
 
-int roll_p_controller(float yaw_angle, int pwm);
+int roll_p_controller(float yawRef, float yaw_angle, int pwm);
 
 
 

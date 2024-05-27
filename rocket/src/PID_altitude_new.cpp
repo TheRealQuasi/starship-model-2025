@@ -11,9 +11,9 @@ int min_motor_speed = 1100;
 
 //PID constants-------------------------------------------------------------------------------------
 
-double alt_Kp = 4.5;//10; // 200; //450;
-double alt_Ki = 1; //100.00;
-double alt_Kd = 2.5; //200.00;
+double alt_Kp = 20;//10; // 200; //450;
+double alt_Ki = 5; //100.00;
+double alt_Kd = 18; //200.00;
 
 //PID controllers----------------------------------------------------------------------------------
 // denna kontroller returnerar vad som ska skrivas till motorerna, så 

@@ -241,8 +241,8 @@ class TFMPI2C
     //  Includes second bus, if any
     void recoverI2CBus();
 
-  private:
     uint8_t frame[ TFMP_FRAME_SIZE + 1];
+  private:
     uint8_t reply[ TFMP_REPLY_SIZE + 1];
 
     uint16_t chkSum;       // calculate the check sum byte.

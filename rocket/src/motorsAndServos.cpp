@@ -62,11 +62,11 @@ void setServo2Pos(int theta2) {
   int thetaMapped = theta2 + SERVO_2_HOME;
 
   // Constraints (servo can't move out of actuation range)
-  if (thetaMapped > SERVO_1_HOME + MAX_GIMBAL) {
-    thetaMapped = SERVO_1_HOME + MAX_GIMBAL;
+  if (thetaMapped > SERVO_2_HOME + MAX_GIMBAL) {
+    thetaMapped = SERVO_2_HOME + MAX_GIMBAL;
   }
-  else if (thetaMapped < SERVO_1_HOME - MAX_GIMBAL) {
-    thetaMapped = SERVO_1_HOME - MAX_GIMBAL;
+  else if (thetaMapped < SERVO_2_HOME - MAX_GIMBAL) {
+    thetaMapped = SERVO_2_HOME - MAX_GIMBAL;
   }
 
   int tMapped = map(thetaMapped, 0, 120, 900, 2100);

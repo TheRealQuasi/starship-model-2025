@@ -16,12 +16,15 @@ float const reference_angle = 0.0;
  * specified speed limits (`SPEED_LIMIT` and `SPEED_MIN`), it is returned as is. Otherwise, it is
  * adjusted to be within the limits before being returned.
  */
-int roll_p_controller(float yaw_angle, int pwm){
-  float roll_error = reference_angle - yaw_angle;
-  int p = ROLL_Kp * roll_error;
+int roll_p_controller(float yawRef, float yaw_angle, int pwm){
+
+  // Roll-error (zRot orientation in degrees)
+  float roll_error = yawRef - yaw_angle;
+  int p = int(ROLL_Kp * roll_error);
 
   int p_val = pwm + p;
 
+  // Constrain speed difference between motors to +/- 10 %
   if(p_val<=pwm*0.9){
      p_val = pwm*0.9;
   }
@@ -29,6 +32,7 @@ int roll_p_controller(float yaw_angle, int pwm){
      p_val = pwm*1.1;
   }
 
+  // Constrain to range of possible pulse-widths to the ESC
   if(p_val>=SPEED_LIMIT){
     return SPEED_LIMIT;
   }
