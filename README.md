@@ -1,6 +1,12 @@
 # Starship model Project 2024
 
-This project is part of a bachelor theisis on Chalmers Technical University.
+Modelling and control of an electric reusable rocket
+----------------------------------------------------
+
+This project is part of a bachelor theisis at Chalmers University of Technology, department of electrical engineering ([Full report](/Bachelor_thesis_EENX16_24_50_Starship.pdf)
+).
+
+It is a continuation of a previous bachlor thesis from 2023, with the goal of buidling a propeller driven rocket model, immitating the control of SpaceX starships second stage.
 
 The project involves programming a Teensy 4.1 microcontroller using PlatformIO in Visual Studio Code.
 
