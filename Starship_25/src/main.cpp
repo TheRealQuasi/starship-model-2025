@@ -1,18 +1,28 @@
 #include <Arduino.h>
+#include "Sensor_handler.h"
 
-// put function declarations here:
-int myFunction(int, int);
+SensorHandler sensorHandler;
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+    Serial.begin(115200);
+    while (!Serial); // Wait for serial connection
+    
+    if (!sensorHandler.begin()) {
+        Serial.println("Sensor initialization failed!");
+        while (1);
+    }
+
+    Serial.println("All sensors initialized!");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
+    SensorData data = sensorHandler.readSensors();
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+    Serial.printf("IMU: Ax: %.2f Ay: %.2f Az: %.2f Gx: %.2f Gy: %.2f Gz: %.2f | "
+                  "Flow: X: %d Y: %d | LiDAR: %dmm\n",
+                  data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
+                  data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
+                  //data.flow_x, data.flow_y, data.lidar_distance);
+
+    delay(100);  // Send data every 100ms
 }
