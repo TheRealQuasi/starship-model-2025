@@ -13,7 +13,7 @@ SensorData SensorHandler::readSensors() {
 
     // Read IMU
     imu.read(data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
-             data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
+             data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z, data.imu_temp);
 
     // Read Optical Flow
     //opticalFlow.readMotion(data.flow_x, data.flow_y);
