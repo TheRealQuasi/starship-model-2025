@@ -3,78 +3,111 @@
 TFMPI2C::TFMPI2C(){}
 TFMPI2C::~TFMPI2C(){}
 
-//sensor.recoverI2CBus();
-
 bool LiDAR::begin() {
-    Wire.begin();            // Initialize two-wire interface
     Serial.begin( 115200);   // Initialize terminal serial port
     //printf_begin();          // Initialize printf library.
-	delay(20);
+    delay(20);
+    
+    printf("\n");            // say 'hello'
+    printf( "TFMPlus I2C Library Example - 14JAN2022");
+    printf("\n\n");
 
-    Serial.flush();          // Flush serial write buffer
-    while( Serial.available())Serial.read();  // flush serial read buffer
+    // - - - - -   RECOVER I2C BUS  - - - - - - - - - - - - - - - 
+    // An I2C device that quits unexpectedly can leave the I2C bus hung,
+    // waiting for a transfer to finish.  This function bypasses the Wire
+    // library and sends 8 pseudo clock cycles, a NAK, and a STOP signal
+    // to the SDA and SCL pin numbers. It flushes any I2C data transfer
+    // that may have been in progress, and ends by calling `Wire.begin()`.
+    tfmP.recoverI2CBus(PIN_WIRE1_SDA, PIN_WIRE1_SCL);
 
-    // Say hello
-    Serial.println();
-    Serial.println( "*****************************");
-    Serial.println( "Will scan the I2C bus for all devices");
-    Serial.println( "and display the first address found.");
-    Serial.println( "Enter a new address in decimal format.");
-    Serial.println( "Confirm 'Y/N' in 5 seconds. Default is 'N'.");
-    Serial.println( "When done, close this window to halt program.");
-    delay(1000);
+    //  Wire.begin();            // Called in previous function.
+    //  Wire.setClock( 400000);  // Set I2C bus speed to 'Fast' if
+                                 // your Arduino supports 400KHz.
+
+    // Send some example commands to the TFMini-Plus
+    // - - Perform a system reset - - - - - - - - - - -
+    printf( "System reset: ");
+    if( tfmP.sendCommand( SOFT_RESET, 0))
+    {
+        printf( "passed.\r\n");
+    }
+    else tfmP.printReply();  // This response and 'printStatus()' are for
+                             // troubleshooting and not strictly necessary.
+    //
+    // - - Display the firmware version - - - - - - - - -
+    printf( "Firmware version: ");
+    if( tfmP.sendCommand( GET_FIRMWARE_VERSION, 0))
+    {
+        printf( "%1u.",  tfmP.version[ 0]); // print three single numbers
+        printf( "%1u.",  tfmP.version[ 1]); // each separated by a dot
+        printf( "%1u\n", tfmP.version[ 2]);
+    }
+    else tfmP.printReply();
+    //
+    // - - Set the data frame-rate to 20 - - - - - - - - -
+    printf( "Data-Frame rate: ");
+    if( tfmP.sendCommand( SET_FRAME_RATE, FRAME_20))
+    {
+        printf( "%2uHz.\n", FRAME_20);
+    }
+    else tfmP.printReply();
+    // - - - - -   End of example commands- - - - - - - - - -
+
+/*  // - - - - - - - - - - - - - - - - - - - - - - - -
+    // The next two commands may be used to switch the device to
+    // UART (serial) mode.  If used, this sketch will no longer
+    // receive I2C data.  The 'TFMPlus_example' sketch in the TFMPlus
+    // (serial) Library can be used to switch the device back to
+    // I2C mode.   Don't forget to switch the cables, too.
+    // - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // - - Set Serial Mode - - - - - - - - - - -
+    printf( "Set Serial Mode: ");
+    if( tfmP.sendCommand( SET_SERIAL_MODE, 0))
+    {
+        printf( "mode set.\r\n");
+    }
+    else tfmP.printReply();
+    printf( "Save Settings: ");
+    if( tfmP.sendCommand( SAVE_SETTINGS, 0))
+    {
+        printf( "saved.\r\n");
+    }
+    else tfmP.printReply();
+*/
+
+    delay(500);            // And wait for half a second.
 
     return true;
 }
 
-/*
-uint16_t LiDAR::getData( int16_t &dist, int16_t &flux, int16_t &temp, uint8_t addr) {
-    //uint8_t addr = 0x62; // Default I2C address for TFMini
-    uint8_t buf[9]; // Array to hold measurement data
-    uint16_t distance = 0; // Reset distance
-    uint16_t strength = 0; // Reset signal strength
-    uint16_t temperature = 0; // Reset temperature
+// Initialize data variables
+int16_t tfDist = 0;       // Distance to object in centimeters
+int16_t tfFlux = 0;       // Signal strength or quality of return signal
+int16_t tfTemp = 0;       // Internal temperature of Lidar sensor chip
 
-    // Send command packet to LiDAR
-    Wire.beginTransmission( addr); // Start transmission to device
-    Wire.write( (uint8_t)0x02); // Send distance command
-    Wire.write( (uint8_t)0x00); // Send data byte 1
-    Wire.write( (uint8_t)0x00); // Send data byte 2
-    Wire.write( (uint8_t)0x00); // Send data byte 3
-    Wire.write( (uint8_t)0x01); // Send data byte 4
-    Wire.endTransmission(); // End transmission
-
-    // Wait for LiDAR to process data
-    delay( 100);
-
-    // Read data from LiDAR
-    Wire.requestFrom( addr, 9); // Request 9 bytes from LiDAR
-    if( Wire.available() >= 9) { // If 9 bytes are available
-        for( uint8_t i = 0; i < 9; i++) { // Loop through all 9 bytes
-            buf[i] = Wire.read(); // Read byte from LiDAR
-        }
-
-        // Calculate distance
-        distance = (uint16_t)buf[2] + (uint16_t)buf[3] * 256;
-
-        // Calculate signal strength
-        strength = (uint16_t)buf[4] + (uint16_t)buf[5] * 256;
-
-        // Calculate temperature
-        temperature = (uint16_t)buf[6] + (uint16_t)buf[7] * 256;
-
-        // Assign values to variables
-        dist = distance;
-        flux = strength;
-        temp = temperature;
+// Read data from LiDAR
+bool LiDAR::getData( int16_t &tfDist, int16_t &tfFlux, int16_t &tfTemp) {
+    Wire1.setSDA(PIN_WIRE1_SDA);
+    Wire1.setSCL(PIN_WIRE1_SCL);
+    tfmP.getData( tfDist, tfFlux, tfTemp); // Get a frame of data
+    if( tfmP.status == TFMP_READY)         // If no error...
+    {
+        printf( "Dist:%04icm ", tfDist);   // display distance,
+        printf( "Flux:%05i ", tfFlux);     // display signal strength/quality,
+        printf( "Temp:%2i%s", tfTemp, "°C" );   // display temperature,
+        printf( "\n");                     // end-of-line.
     }
-
-    return distance;
-}
-*/
-
-bool LiDAR::getData( int16_t &dist, int16_t &flux, int16_t &temp, uint8_t addr) {
-    return sensor.getData(dist, flux, temp, addr);
+    else
+    {
+        tfmP.printFrame();                 // Display error and data frame
+        if( tfmP.status == TFMP_I2CWRITE)  // If I2C error...
+        {
+            tfmP.recoverI2CBus(PIN_WIRE1_SDA, PIN_WIRE1_SCL);          // recover hung bus.
+        }
+    }
+    delay(50);    //  Run loop at approximately 20Hz.
+    return true;
 }
 
 
