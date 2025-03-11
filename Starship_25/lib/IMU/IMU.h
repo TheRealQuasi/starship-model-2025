@@ -5,18 +5,14 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_BNO055.h>
-#include <SPI.h>
+#include "BMI088.h"
 
-class IMU {
-public:
-    IMU();
+class IMU{
+    public:
     bool begin();
-    void read(float& accel_x, float& accel_y, float& accel_z, 
-              float& gyro_x, float& gyro_y, float& gyro_z);
+    void read(float &ax, float &ay, float &az, float &gx, float &gy, float &gz);
 
-private:
-    Adafruit_BNO055 bno;
+    private:
 };
 
 #endif
