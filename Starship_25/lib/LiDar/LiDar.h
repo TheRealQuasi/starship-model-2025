@@ -1,6 +1,7 @@
 #ifndef LIDAR_H
 #define LIDAR_H
 
+#include "pins.h"
 #include <Wire.h>
 #include <Arduino.h>
 #include <TFMPI2C.h>

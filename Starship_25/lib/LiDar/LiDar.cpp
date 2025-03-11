@@ -1,8 +1,6 @@
 #include "lidar.h"
 
-TFMPI2C::TFMPI2C(){}
-TFMPI2C::~TFMPI2C(){}
-
+// Initialize LiDAR
 bool LiDAR::begin() {
     Serial.begin( 115200);   // Initialize terminal serial port
     //printf_begin();          // Initialize printf library.

@@ -8,7 +8,6 @@ int16_t temp = 0;
 
 BMI088 bmi088( BMI088_ACC_ADDRESS, BMI088_GYRO_ADDRESS );
 
-
 bool IMU::begin(){
     Wire.begin();
     Serial.begin(115200);
@@ -31,11 +30,11 @@ bool IMU::begin(){
     }
 } 
 
-void IMU::read(float &ax, float &ay, float &az, float &gx, float &gy, float &gz){
+void IMU::read(float &ax, float &ay, float &az, float &gx, float &gy, float &gz, int16_t &temp){
     bmi088.getAcceleration(&ax, &ay, &az);
     bmi088.getGyroID();
     bmi088.getGyroscope(&gx, &gy, &gz);
-    //temp = bmi088.getTemperature();
+    temp = bmi088.getTemperature();
 
     Serial.print(ax);
     Serial.print(",");
@@ -51,7 +50,7 @@ void IMU::read(float &ax, float &ay, float &az, float &gx, float &gy, float &gz)
     Serial.print(gz);
     Serial.print(",");
 
-    //Serial.print(temp);
+    Serial.print(temp);
 
     Serial.println();
 
