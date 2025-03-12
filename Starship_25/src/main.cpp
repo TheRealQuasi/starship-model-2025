@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <SPI.h>
 #include "Sensor_handler.h"
 
 SensorHandler sensorHandler;
