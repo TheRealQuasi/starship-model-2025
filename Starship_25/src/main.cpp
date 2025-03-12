@@ -21,8 +21,9 @@ void loop() {
     Serial.printf("IMU: Ax: %.2f Ay: %.2f Az: %.2f Gx: %.2f Gy: %.2f Gz: %.2f | "
                   "Flow: X: %d Y: %d | LiDAR: %dmm\n",
                   data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
-                  data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
-                  //data.flow_x, data.flow_y, data.lidar_distance);
+                  data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z,
+                  data.flow_x, data.flow_y,
+                  data.lidar_dist, data.lidar_flux, data.lidar_temp);
 
     delay(100);  // Send data every 100ms
 }
