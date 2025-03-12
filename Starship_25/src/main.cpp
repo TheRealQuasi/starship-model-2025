@@ -3,6 +3,17 @@
 #include <SPI.h>
 #include "Sensor_handler.h"
 
+// if standard library not found,
+// use this to check: ls ~/.platformio/packages/framework-arduinoteensy/libraries/
+// Wire and SPI are standard libraries for Teensy so they should be found
+// Teensy 4.1 has 2 I2C buses, Wire and Wire1
+// Wire is on pins 18 and 19
+// Wire1 is on pins 16 and 17
+// SPI is on pins 11, 12, 13, and 10
+/* Try running: platformio run --target clean
+platformio run
+*/
+
 SensorHandler sensorHandler;
 
 void setup() {
