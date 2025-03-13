@@ -91,10 +91,12 @@ bool LiDAR::getData( int16_t &tfDist, int16_t &tfFlux, int16_t &tfTemp) {
     tfmP.getData( tfDist, tfFlux, tfTemp); // Get a frame of data
     if( tfmP.status == TFMP_READY)         // If no error...
     {
+        /*
         printf( "Dist:%04icm ", tfDist);   // display distance,
         printf( "Flux:%05i ", tfFlux);     // display signal strength/quality,
         printf( "Temp:%2i%s", tfTemp, "°C" );   // display temperature,
         printf( "\n");                     // end-of-line.
+        */
     }
     else
     {
