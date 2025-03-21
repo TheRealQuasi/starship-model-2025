@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include "Sensor_handler.h"
+#include "Control.h"
 
 // if standard library not found,
 // use this to check: ls ~/.platformio/packages/framework-arduinoteensy/libraries/
@@ -16,8 +17,10 @@ platformio run
 */
 
 SensorHandler sensorHandler;
+Control droneControl;
 
 void setup() {
+    // Initialize serial communication to sensors
     Serial.begin(115200);
     while (!Serial); // Wait for serial connection
     
@@ -27,6 +30,9 @@ void setup() {
     }
 
     Serial.println("All sensors initialized!");
+
+    // Initialize drone control
+    droneControl.initialize();
 }
 
 void loop() {
