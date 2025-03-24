@@ -32,7 +32,7 @@ void setup() {
     Serial.println("All sensors initialized!");
 
     // Initialize drone control
-    droneControl.initialize();
+    //droneControl.initialize();
 }
 
 void loop() {
@@ -52,12 +52,12 @@ void loop() {
     Serial.println(data.imu_gyro_z);
     Serial.printf(">Temp:");
     Serial.println(data.imu_temp);
-    /*
+    
     Serial.printf(">FlowX:");
     Serial.println(data.flow_x);
     Serial.printf(">FlowY:");
     Serial.println(data.flow_y);
-    */
+    
     Serial.printf(">LiDAR:");
     Serial.println(data.lidar_dist);
     Serial.printf(">Flux:");

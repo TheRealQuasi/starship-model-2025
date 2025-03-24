@@ -5,7 +5,13 @@
 SensorHandler::SensorHandler() {}
 
 bool SensorHandler::begin() {
-    return imu.begin() && lidar.begin(); // && flow.begin();
+    bool imu_b, lidar_b, flow_b;
+    imu_b = imu.begin();
+    lidar_b = lidar.begin();
+    flow_b = flow.begin();
+    Serial.printf("sensor begin: ",imu_b,lidar_b,flow_b);
+
+    return imu_b && lidar_b && flow_b;
 }
 
 SensorData SensorHandler::readSensors() {
@@ -16,7 +22,7 @@ SensorData SensorHandler::readSensors() {
              data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z, data.imu_temp);
 
     // Read Optical Flow
-    //flow.readMotion(data.flow_x, data.flow_y);
+    flow.readMotion(data.flow_x, data.flow_y);
 
     // Read LiDAR
     lidar.getData(data.lidar_dist, data.lidar_flux, data.lidar_temp); // Default I2C address for TFMini
