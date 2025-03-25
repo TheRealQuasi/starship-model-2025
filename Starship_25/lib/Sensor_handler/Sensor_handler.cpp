@@ -9,7 +9,10 @@ bool SensorHandler::begin() {
     imu_b = imu.begin();
     lidar_b = lidar.begin();
     flow_b = flow.begin();
-    Serial.printf("sensor begin: ",imu_b,lidar_b,flow_b);
+    Serial.println("Sensor begin: ");
+    Serial.println(imu_b);
+    Serial.println(lidar_b);
+    Serial.println(flow_b);
 
     return imu_b && lidar_b && flow_b;
 }

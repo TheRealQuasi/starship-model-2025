@@ -2,7 +2,8 @@
 #include "Optical_flow.h"
 
 // Using digital pin 10 for chip select
-Bitcraze_PMW3901 flow(10);
+Bitcraze_PMW3901 flow(10); // SPI CS pin 10 for optical flow sensor
+// MOSI: 11, MISO: 12, SCK: 13
 
 bool Optical_flow::begin() {
     return flow.begin();

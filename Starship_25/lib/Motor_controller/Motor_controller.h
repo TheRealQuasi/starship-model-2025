@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include <Servo.h>
+#include "Control.h"
 
 // Constants
 
@@ -19,14 +20,6 @@
 #define RED_LED_PIN 41     // Red LED pin
 #define CAL_BUTTON  37 //6 // Calibration button pin
 #define CAL_BUTTON_DURATION 2000  // How long the botton needs to hold to enter esc calibration [ms]
-
-struct ControlData {
-  bool armSwitch;     // Arm switch status
-  byte calButton;     // Calibration button status  <<<<<<<<<---------- (Gunnar): Added variable for calButton
-  byte thrustSlider;  // 0-255
-  byte lxAxisValue;   // 0-255
-  byte lyAxisValue;   // 0-255
-};
 
 // Functions
 // ---------

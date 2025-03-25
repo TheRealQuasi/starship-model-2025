@@ -8,6 +8,14 @@
 #include <Arduino.h>
 #include <Servo.h>
 
+struct ControlData {
+  bool armSwitch;     // Arm switch status
+  byte calButton;     // Calibration button status  <<<<<<<<<---------- (Gunnar): Added variable for calButton
+  byte thrustSlider;  // 0-255
+  byte lxAxisValue;   // 0-255
+  byte lyAxisValue;   // 0-255
+};
+
 class Control {
 public:
     Control();  // Constructor

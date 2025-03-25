@@ -3,6 +3,8 @@
 #include <SPI.h>
 #include "Sensor_handler.h"
 #include "Control.h"
+#include "Killswitch.h"
+#include "Motor_controller.h"
 
 // if standard library not found,
 // use this to check: ls ~/.platformio/packages/framework-arduinoteensy/libraries/
@@ -31,11 +33,23 @@ void setup() {
 
     Serial.println("All sensors initialized!");
 
+    // Initialize kill switch
+    setupKillSwitch(); // This is a blocking function
+
     // Initialize drone control
     //droneControl.initialize();
 }
 
 void loop() {
+
+    if (!emergencyStop) {
+        //droneControl.update();
+    } else {
+        // Stop motors
+        //dc_motor_1.write(1100); // Motor 1
+        //dc_motor_2.write(1100); // Motor 2
+    }
+
     SensorData data = sensorHandler.readSensors();
 
     Serial.printf(">Ax:");
