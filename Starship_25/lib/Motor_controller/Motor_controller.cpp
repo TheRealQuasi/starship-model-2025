@@ -1,5 +1,5 @@
 // =======================
-// Servo and motor control
+// Motor control
 // =======================
 
 /*
