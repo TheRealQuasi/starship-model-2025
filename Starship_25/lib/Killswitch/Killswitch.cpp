@@ -2,19 +2,24 @@
 #include "Motor_controller.h"
 
 volatile bool emergencyStop = false;
+volatile unsigned long pulseStart = 0;
+volatile unsigned long pulseWidth = 0;
 
 void killSwitchISR() {
-    if (pulseIn(KILL_SWITCH_PIN, HIGH, 25000) < 1000) {  
-        emergencyStop = true;
 
-        Serial.println("!!! KILL SWITCH ACTIVATED !!!");
+    if (digitalRead(KILL_SWITCH_PIN) == HIGH) {
+        pulseStart = micros();  // Record the timestamp at the rising edge
+    } else {
+        pulseWidth = micros() - pulseStart;  // Compute pulse width on falling edge
+        if (pulseWidth > 1600) {  // Adjust threshold based on your WFLY signal range
+            emergencyStop = true;
+            //NVIC_SystemReset();  // Force a system reset
 
-        // Stop motors
-        analogWrite(MOTOR_1_PIN, 1100); // Motor 1
-        analogWrite(MOTOR_2_PIN, 1100); // Motor 2
+            // Stop motors
+            analogWrite(MOTOR_1_PIN, 1100); // Motor 1
+            analogWrite(MOTOR_2_PIN, 1100); // Motor 2
 
-        // Stay in infinite loop
-        while (true);
+        }
     }
 }
 

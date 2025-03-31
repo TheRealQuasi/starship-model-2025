@@ -5,7 +5,7 @@
 #include <Servo.h>
 #include "Motor_controller.h"
 
-#define KILL_SWITCH_PIN 3  // Pin connected to kill switch channel
+#define KILL_SWITCH_PIN 0  // Pin connected to kill switch channel
 
 extern volatile bool emergencyStop;
 

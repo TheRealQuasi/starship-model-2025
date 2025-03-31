@@ -34,21 +34,30 @@ void setup() {
     Serial.println("All sensors initialized!");
 
     // Initialize kill switch
-    setupKillSwitch(); // This is a blocking function
+    setupKillSwitch(); // This is a non-blocking function that sets up the interrupt
 
     // Initialize drone control
     //droneControl.initialize();
 }
 
 void loop() {
+    //int pulseWidth = pulseIn(KILL_SWITCH_PIN, HIGH, 250000);  // Read PWM pulse width (max timeout: 2.5ms)
+    //Serial.print("Kill Switch PWM Pulse Width: ");
+    //Serial.println(pulseWidth);
 
-    if (!emergencyStop) {
-        //droneControl.update();
-    } else {
+    if (emergencyStop) {
+        Serial.println("Emergency stop triggered!");
+
         // Stop motors
+
         //dc_motor_1.write(1100); // Motor 1
         //dc_motor_2.write(1100); // Motor 2
+        //analogWrite(MOTOR_1_PIN, 1100); // Motor 1
+        //analogWrite(MOTOR_2_PIN, 1100); // Motor 2
+        break;
     }
+
+    //droneControl.update();
 
     SensorData data = sensorHandler.readSensors();
 
@@ -78,15 +87,6 @@ void loop() {
     Serial.println(data.lidar_flux);
     Serial.printf(">LiDAR Temp:");
     Serial.println(data.lidar_temp);
-
-    /*
-    Serial.printf("IMU: Ax: %.2f Ay: %.2f Az: %.2f Gx: %.2f Gy: %.2f Gz: %.2f | "
-                  "Flow: X: %d Y: %d | LiDAR: %dmm\n",
-                  data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
-                  data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z,
-                  data.flow_x, data.flow_y,
-                  data.lidar_dist, data.lidar_flux, data.lidar_temp);
-    */
 
     delay(100);  // Send data every 100ms
 }
