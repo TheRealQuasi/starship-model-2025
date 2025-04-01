@@ -54,8 +54,9 @@ void loop() {
         //dc_motor_2.write(1100); // Motor 2
         //analogWrite(MOTOR_1_PIN, 1100); // Motor 1
         //analogWrite(MOTOR_2_PIN, 1100); // Motor 2
-        break;
-    }
+        
+        while (1);  // Infinite loop
+    } 
 
     //droneControl.update();
 
