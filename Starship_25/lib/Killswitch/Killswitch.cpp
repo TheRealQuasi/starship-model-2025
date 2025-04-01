@@ -1,3 +1,4 @@
+#include <imxrt.h>  // Required for NVIC_SystemReset()
 #include "Killswitch.h"
 #include "Motor_controller.h"
 
@@ -11,14 +12,15 @@ void killSwitchISR() {
         pulseStart = micros();  // Record the timestamp at the rising edge
     } else {
         pulseWidth = micros() - pulseStart;  // Compute pulse width on falling edge
-        if (pulseWidth > 1600) {  // Adjust threshold based on your WFLY signal range
+        if (pulseWidth > 1500) {  // Adjust threshold based on your WFLY signal range
             emergencyStop = true;
-            //NVIC_SystemReset();  // Force a system reset
 
             // Stop motors
             analogWrite(MOTOR_1_PIN, 1100); // Motor 1
             analogWrite(MOTOR_2_PIN, 1100); // Motor 2
 
+            // Reset the system
+            SCB_AIRCR = 0x05FA0004;  // Trigger system reset
         }
     }
 }
