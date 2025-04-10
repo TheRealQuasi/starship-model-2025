@@ -1,3 +1,4 @@
+// Project: TFMini-Plus I2C Library
 #include "lidar.h"
 
 // Initialize LiDAR
