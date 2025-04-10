@@ -25,7 +25,10 @@ SensorData SensorHandler::readSensors() {
              data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z, data.imu_temp);
 
     // Read Optical Flow
-    flow.readMotion(data.flow_x, data.flow_y);
+    if (flowDataReady) {
+        flowDataReady = false; // Reset the flag
+        flow.readMotion(data.flow_x, data.flow_y); //, data.flow_quality);
+    }
 
     // Read LiDAR
     lidar.getData(data.lidar_dist, data.lidar_flux, data.lidar_temp); // Default I2C address for TFMini

@@ -37,7 +37,8 @@ void setup() {
     setupKillSwitch(); // This is a non-blocking function that sets up the interrupt
 
     // Initialize drone control
-    //droneControl.initialize();
+    droneControl.initialize();
+    droneControl.testComponents();  // Test motors and servos
 }
 
 void loop() {
