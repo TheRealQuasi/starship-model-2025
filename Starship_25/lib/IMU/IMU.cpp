@@ -35,26 +35,4 @@ void IMU::read(float &ax, float &ay, float &az, float &gx, float &gy, float &gz,
     bmi088.getGyroID();
     bmi088.getGyroscope(&gx, &gy, &gz);
     temp = bmi088.getTemperature();
-
-    /*
-    Serial.print(ax);
-    Serial.print(",");
-    Serial.print(ay);
-    Serial.print(",");
-    Serial.print(az);
-    Serial.print(",");
-
-    Serial.print(gx);
-    Serial.print(",");
-    Serial.print(gy);
-    Serial.print(",");
-    Serial.print(gz);
-    Serial.print(",");
-
-    Serial.print(temp);
-
-    Serial.println();
-
-    delay(50);
-    */
 }
