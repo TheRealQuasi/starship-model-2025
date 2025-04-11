@@ -64,6 +64,15 @@ void loop() {
 
     SensorData data = sensorHandler.readSensors();
 
+    // Read IMU data in real-time to matlab
+    Serial.print(ax); Serial.print(",");
+    Serial.print(ay); Serial.print(",");
+    Serial.print(az); Serial.print(",");
+    Serial.print(gx); Serial.print(",");
+    Serial.print(gy); Serial.print(",");
+    Serial.println(gz);  // println adds the line break
+
+
     updateIMU(data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
               data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
 
