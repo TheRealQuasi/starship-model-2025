@@ -5,6 +5,7 @@
 #include "Control.h"
 #include "Killswitch.h"
 #include "Motor_controller.h"
+#include "Sensor_fusion.h"
 
 // if standard library not found,
 // use this to check: ls ~/.platformio/packages/framework-arduinoteensy/libraries/
@@ -63,6 +64,15 @@ void loop() {
 
     SensorData data = sensorHandler.readSensors();
 
+    updateIMU(data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
+              data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
+
+    Serial.print("Pitch: ");
+    Serial.print(pitch * RAD_TO_DEG);
+    Serial.print(" Roll: ");
+    Serial.println(roll * RAD_TO_DEG);
+
+    /*
     Serial.printf(">Ax:");
     Serial.println(data.imu_accel_x);
     Serial.printf(">Ay:");
@@ -89,6 +99,7 @@ void loop() {
     Serial.println(data.lidar_flux);
     Serial.printf(">LiDAR Temp:");
     Serial.println(data.lidar_temp);
+    */
 
     delay(100);  // Send data every 100ms
 }
