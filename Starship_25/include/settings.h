@@ -1,3 +1,5 @@
+#ifndef SETTINGS_H
+#define SETTINGS_H
 // ==============================
 // Global settings for the rocket
 // ==============================
@@ -49,6 +51,10 @@
 // // =============================================================================================
 // //  Constants 
 // // =============================================================================================
+
+// ===== Killswitch settings =====
+#define KILL_SWITCH_PIN 0  // Pin connected to kill switch channel
+#define KILL_SWITCH_START_THRESHOLD 10 // Time to wait before kill switch is activated [ms]
 
 // ===== Div settings =====
 #define BLINK_COUNT 5
@@ -171,3 +177,4 @@
 #define PRS_OSR 2
 
 
+#endif // SETTINGS_H

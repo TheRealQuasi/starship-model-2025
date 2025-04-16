@@ -1,10 +1,9 @@
-#include <imxrt.h>  // Required for NVIC_SystemReset()
 #include "Killswitch.h"
-#include "Motor_controller.h"
 
 volatile bool emergencyStop = false;
 volatile unsigned long pulseStart = 0;
 volatile unsigned long pulseWidth = 0;
+volatile unsigned int start_count = 0;
 
 void killSwitchISR() {
 
@@ -14,13 +13,18 @@ void killSwitchISR() {
         pulseWidth = micros() - pulseStart;  // Compute pulse width on falling edge
         if (pulseWidth > 1500) {  // Adjust threshold based on your WFLY signal range
             emergencyStop = true;
+            start_count = 0;  // Reset the start count
 
             // Stop motors
             analogWrite(MOTOR_1_PIN, 1100); // Motor 1
             analogWrite(MOTOR_2_PIN, 1100); // Motor 2
 
-            // Reset the system
-            SCB_AIRCR = 0x05FA0004;  // Trigger system reset
+            
+        } else {
+            if (start_count > KILL_SWITCH_START_THRESHOLD) {  //Reduce possibility of false trigger
+                emergencyStop = false;  // Reset the emergency stop flag if pulse width is below threshold
+            }
+            start_count++;
         }
     }
 }
