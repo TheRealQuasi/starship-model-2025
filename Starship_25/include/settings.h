@@ -41,8 +41,8 @@
 
 // // ===== Radio pin assignment =====
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
-#define CE_PIN 9    //9 teensy, 2 arduino uno (lighter color)
-#define CSN_PIN 10  //10 teensy, 4 arduino uno (lighter color)
+//#define CE_PIN 9    //9 teensy, 2 arduino uno (lighter color)
+//#define CSN_PIN 10  //10 teensy, 4 arduino uno (lighter color)
 
 
 
@@ -71,17 +71,17 @@
 
 // ====== Radio Configuration ======
 // Define transmit power level | RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
-#define RF24_PA_LEVEL RF24_PA_LOW
+//#define RF24_PA_LEVEL RF24_PA_LOW
 // Define speed of transmission | RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
-#define RF24_SPEED RF24_2MBPS
+//#define RF24_SPEED RF24_2MBPS
 // What radio channel to use (0-127). The same on all nodes must match exactly.
-#define RF24_CHANNEL 124
+//#define RF24_CHANNEL 124
 
 // #define TX_INTERVAL_MILLIS 
 
 // ====== Other ======
 // Baudrate for serial communication to terminal on computer
-#define BAUDRATE 576000//500000//115200 
+#define BAUDRATE 6000000 //500000//6000000
 
 /* // Timeout to wait before skipping a task
 #define TIMEOUT_DURATION 15000000 // 15 seconds */
