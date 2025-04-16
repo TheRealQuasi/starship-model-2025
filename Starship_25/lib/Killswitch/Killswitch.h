@@ -4,8 +4,7 @@
 #include <Arduino.h>
 #include <Servo.h>
 #include "Motor_controller.h"
-
-#define KILL_SWITCH_PIN 0  // Pin connected to kill switch channel
+#include "settings.h"
 
 extern volatile bool emergencyStop;
 
