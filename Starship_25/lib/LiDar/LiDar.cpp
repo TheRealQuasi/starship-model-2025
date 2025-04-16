@@ -45,9 +45,9 @@ bool LiDAR::begin() {
     //
     // - - Set the data frame-rate to 20 - - - - - - - - -
     printf( "Data-Frame rate: ");
-    if( tfmP.sendCommand( SET_FRAME_RATE, FRAME_20))
+    if( tfmP.sendCommand( SET_FRAME_RATE, FRAME_1000))
     {
-        printf( "%2uHz.\n", FRAME_20);
+        printf( "%2uHz.\n", FRAME_1000);
     }
     else tfmP.printReply();
     // - - - - -   End of example commands- - - - - - - - - -
@@ -107,7 +107,7 @@ bool LiDAR::getData( int16_t &tfDist, int16_t &tfFlux, int16_t &tfTemp) {
             tfmP.recoverI2CBus(PIN_WIRE1_SDA, PIN_WIRE1_SCL);          // recover hung bus.
         }
     }
-    delay(50);    //  Run loop at approximately 20Hz.
+    //delay(50);    //  Run loop at approximately 20Hz.
     return true;
 }
 
