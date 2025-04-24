@@ -7,6 +7,8 @@
 #include "settings.h"
 
 extern volatile bool emergencyStop;
+extern volatile unsigned long pulseWidth;
+extern volatile bool manualControl;
 
 void setupKillSwitch();
 void killSwitchISR();

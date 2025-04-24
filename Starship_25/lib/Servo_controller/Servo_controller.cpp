@@ -6,6 +6,14 @@
 Servo servo1;
 Servo servo2;
 
+volatile uint32_t Servo1ControlRiseTime = 0;  // Record the timestamp at the rising edge
+volatile uint32_t Servo2ControlRiseTime = 0;  // Record the timestamp at the rising edge
+
+volatile uint32_t Servo1ControlPWM = 0;
+volatile uint32_t Servo2ControlPWM = 0;
+
+
+
 // ====== Servos ======
 
 // Functions that sends position commands to the respective servo
@@ -62,6 +70,8 @@ void gimbalTest() {
 }
 
 void initServos() {
+
+
   #ifdef DEBUG
     Serial.print("Servo init\n");
     Serial.print("--------------------\n \n");
@@ -74,4 +84,35 @@ void initServos() {
   // Gimbal both motors to the home position (0 degrees)
   setServo1Pos(0);
   setServo2Pos(0);
+
+  setupServo1Controler();
+  setupServo2Controler();
+  delay(50);
+}
+
+void Servo_1_Control_ISR() {
+  if (digitalRead(SERVO_1_CONTROL_PIN) == HIGH) {
+    Servo1ControlRiseTime = micros();
+  } else {
+    Servo1ControlPWM = micros() - Servo1ControlRiseTime;
+  }
+}
+
+void Servo_2_Control_ISR() {
+  if (digitalRead(SERVO_2_CONTROL_PIN) == HIGH) {
+    Servo2ControlRiseTime = micros();
+  } else {
+    Servo2ControlPWM = micros() - Servo2ControlRiseTime;
+  }
+}
+
+void setupServo1Controler() {
+  pinMode(SERVO_1_CONTROL_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(SERVO_1_CONTROL_PIN), Servo_1_Control_ISR, CHANGE);
+}
+
+
+void setupServo2Controler() {
+  pinMode(SERVO_2_CONTROL_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(SERVO_2_CONTROL_PIN), Servo_2_Control_ISR, CHANGE);
 }

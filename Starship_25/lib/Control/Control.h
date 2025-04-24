@@ -20,8 +20,10 @@ class Control {
 public:
     Control();  // Constructor
 
+
     void initialize();  // Initialize motors and servos
     void testComponents();  // Run test functions for motors and servos
+    void manualControl();  // Manual control function
 };
 
 #endif

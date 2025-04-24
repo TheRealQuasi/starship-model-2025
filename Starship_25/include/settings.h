@@ -41,6 +41,9 @@
 #define CAL_BUTTON  37 //6
 #define RED_LED_PIN 41 
 
+#define SERVO_1_CONTROL_PIN 26
+#define SERVO_2_CONTROL_PIN 27
+#define THTOTLE_COTROL_PIN 1
 // // ===== Radio pin assignment =====
 // Define the pins used for the nRF24L01 transceiver module (CE, CSN)
 //#define CE_PIN 9    //9 teensy, 2 arduino uno (lighter color)
@@ -54,7 +57,7 @@
 
 // ===== Killswitch settings =====
 #define KILL_SWITCH_PIN 0  // Pin connected to kill switch channel
-#define KILL_SWITCH_START_THRESHOLD 10 // Time to wait before kill switch is activated [ms]
+#define KILL_SWITCH_START_THRESHOLD 10 // Times to wait before kill switch is activated 
 
 // ===== Div settings =====
 #define BLINK_COUNT 5

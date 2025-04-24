@@ -8,6 +8,10 @@
 
 #include <Arduino.h>
 #include <Servo.h>
+#include <settings.h>
+
+extern volatile uint32_t Servo1ControlPWM;
+extern volatile uint32_t Servo2ControlPWM;  
 
 // Constants
 // ---------
@@ -26,5 +30,12 @@ void setServo2Pos(int theta2);
 void gimbalTest();
 
 void initServos();
+
+void Servo_1_Control_ISR();
+void Servo_2_Control_ISR();
+void setupServo1Controler();
+void setupServo2Controler();
+
+
 
 #endif
