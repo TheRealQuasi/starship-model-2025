@@ -24,6 +24,9 @@
 Servo dc_motor_1;
 Servo dc_motor_2;
 
+volatile uint32_t MotorControlPWM = 0;
+volatile uint32_t MotorControlRiseTime = 0;
+
 // =============================================================================================
 //  Functions
 // =============================================================================================
@@ -31,29 +34,29 @@ Servo dc_motor_2;
 // ====== Motors ======
 // Speed mapping - takes % of thrust max thrust, returns on-time [us]
 int speedMapping(int thrustLevel) {                  // <<<<<<<<<--------------- ToDo: This should be changed so it's maps from [N] to [us] according to the "thrust-map" curve
-    return int(map(thrustLevel, 0, 100, 1100, 1940));
+    return int(map(thrustLevel, 0, 100, 1050, 1940));
 }
 
 // Sets PWM on-time in [micro-seconds]
-void motorsWrite(int motor, int speed, ControlData& ackData) {
+void motorsWrite(int motor, int speed) {
   // Check arming status, set speed to zero in case unarmed
-  if(!(ackData.armSwitch)) {                                 // <<<<<<<<<-------This armed check might need tweaking to prevent shutdown mid air
-    dc_motor_1.write(1100);
-    dc_motor_2.write(1100);
-    
-    //   // ToDo: Here, a shoudown procedure should be called
-    delay(200000);
-  }
+  //if(!(ackData.armSwitch)) {                                 // <<<<<<<<<-------This armed check might need tweaking to prevent shutdown mid air
+  //  dc_motor_1.write(1100);
+  //  dc_motor_2.write(1100);
+  //  
+  //  //   // ToDo: Here, a shoudown procedure should be called
+  //  delay(200000);
+  //}
 
   // If armed, set motor speed
-  else {
-    // Constraints
-    if (speed > SPEED_LIMIT) {
-      speed = SPEED_LIMIT;
-    }
-    if (speed < 1100) {
-      speed = 1100;
-    }
+  
+  // Constraints
+  if (speed > SPEED_LIMIT) {
+    speed = SPEED_LIMIT;
+  }
+  if (speed < 1050) {
+    speed = 1050;
+  }
 
     // // ToDo: slider mapping
     // int sliderMapped = ackData.thrustSlider;
@@ -80,7 +83,7 @@ void motorsWrite(int motor, int speed, ControlData& ackData) {
       dc_motor_2.write(speed);
     } 
     // ToDo: Here, a shoudown procedure should be called
-    }
+    
 }
 
 // Brief test of BLCD motors at low RPM
@@ -131,10 +134,10 @@ void escCalibration(bool &escCalibrationStatus) {           // <<<<<<-----------
   #endif
 
   // Limit thrust range for safety                      // <<<<<-------------- Might not be needed in the final version
-  dc_motor_1.attach(MOTOR_1_PIN, 1100, SPEED_LIMIT);
-  dc_motor_2.attach(MOTOR_2_PIN, 1100, SPEED_LIMIT);
+  dc_motor_1.attach(MOTOR_1_PIN, 1050, SPEED_LIMIT);
+  dc_motor_2.attach(MOTOR_2_PIN, 1050, SPEED_LIMIT);
   dc_motor_1.write(1100);
-  dc_motor_2.write(1100);
+  dc_motor_2.write(1050);
 
   #ifdef DEBUG
     Serial.print("Testing motors at low speed for 2 seconds\n");
@@ -190,10 +193,27 @@ void waitESCCalCommand(bool &escCalibrationStatus) {
   }
 }
 
+void Motor_Control_ISR() {
+  if (digitalRead(THTOTLE_COTROL_PIN) == HIGH) {
+    MotorControlRiseTime = micros();
+  } else {
+    MotorControlPWM = micros() - MotorControlRiseTime;
+  }
+}
+
+void setupMotorControler() {
+  pinMode(THTOTLE_COTROL_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(THTOTLE_COTROL_PIN), Motor_Control_ISR, CHANGE);
+}
+
+
 void initMotorController() {
-    dc_motor_1.attach(MOTOR_1_PIN, 1100, 1940);
-    dc_motor_2.attach(MOTOR_2_PIN, 1100, 1940);
+    dc_motor_1.attach(MOTOR_1_PIN, 1050, 1940);
+    dc_motor_2.attach(MOTOR_2_PIN, 1050, 1940);
   
-    dc_motor_1.write(1100); 
-    dc_motor_2.write(1100);
+    dc_motor_1.write(1050); 
+    dc_motor_2.write(1050);
+
+    setupMotorControler();
+    delay(50);
   }

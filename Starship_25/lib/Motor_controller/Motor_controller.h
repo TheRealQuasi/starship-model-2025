@@ -8,6 +8,7 @@
 #include <Arduino.h>
 #include <Servo.h>
 #include "Control.h"
+#include <settings.h>
 
 // Constants
 
@@ -21,11 +22,14 @@
 #define CAL_BUTTON  37 //6 // Calibration button pin
 #define CAL_BUTTON_DURATION 2000  // How long the botton needs to hold to enter esc calibration [ms]
 
+
+extern volatile uint32_t MotorControlPWM;  
+
 // Functions
 // ---------
 int speedMapping(int thrustLevel);
 
-void motorsWrite(int motor, int s, ControlData& ackData);
+void motorsWrite(int motor, int s);
 
 void motorTest();
 
@@ -34,5 +38,6 @@ void escCalibration(bool &escCalibrationStatus);
 void waitESCCalCommand(bool &escCalibrationStatus);
 
 void initMotorController();
+
 
 #endif
