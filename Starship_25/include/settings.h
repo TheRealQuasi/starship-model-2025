@@ -90,7 +90,7 @@
 
 // ====== Other ======
 // Baudrate for serial communication to terminal on computer
-#define BAUDRATE 6000000 //500000//6000000
+#define BAUDRATE 921600//6000000 //500000//6000000
 
 /* // Timeout to wait before skipping a task
 #define TIMEOUT_DURATION 15000000 // 15 seconds */
