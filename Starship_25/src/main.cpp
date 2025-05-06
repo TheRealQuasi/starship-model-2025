@@ -5,9 +5,11 @@
 #include "Control.h"
 #include "Killswitch.h"
 #include "Motor_controller.h"
-#include "Sensor_fusion.h"
+#include "Complementary_filter.h"
+#include "Dead_reckoning_position.h"
 #include "settings.h"
 #include "Servo_controller.h"
+#include <math.h>
 
 // if standard library not found,
 // use this to check: ls ~/.platformio/packages/framework-arduinoteensy/libraries/
@@ -28,6 +30,8 @@ SensorHandler sensorHandler;
 Control droneControl;
 
 volatile bool TestStart = true; // Flag for emergency stop
+volatile bool logging = false; // Flag for logging
+volatile uint32_t temp_times = 0; // counter for logging
 
 void setup() {
     pinMode(9, INPUT);
@@ -75,11 +79,11 @@ void loop() {
     //Serial.println(pulseWidth);
 
     if (emergencyStop) {
-        uint32_t time_change = (micros()-start_time)/1000000;
-        Serial.println("time: " + String(time_change) + " seconds");
-        Serial.println("counter: " + String(counter));
-        Serial.println("Data/second: " + String(counter/time_change));  
-        Serial.println("Emergency stop triggered!");
+        //uint32_t time_change = (micros()-start_time)/1000000;
+        //Serial.println("time: " + String(time_change) + " seconds");
+        //Serial.println("counter: " + String(counter));
+        //Serial.println("Data/second: " + String(counter/time_change));  
+        //Serial.println("Emergency stop triggered!");
 
         // Stop motors
 
@@ -94,6 +98,7 @@ void loop() {
         Serial.println("Resuming operation...");
         start_time = micros();  // Reset time
         counter = 0;
+        logging = true;
     }
     // Test stop condition
     //droneControl.testComponents(); 
@@ -108,21 +113,27 @@ void loop() {
     SensorData data = sensorHandler.readSensors();
     //SensorData data = {0};
     //delay(1);
-  
-
+    
+    if (logging && micros()-start_time > 50000*temp_times){
+        temp_times++;
+        float time_change = float((micros()-start_time)/1000000);
+        //Serial.println("time: " + String(time_change) + " seconds");
+        //Serial.println("counter: " + String(counter));
+        //Serial.println("Data/second: " + String(counter/time_change));  
+        Serial.println(String(counter/time_change));
+    }
 
     // Read IMU data in real-time to matlab
     
-    //Serial.print(data.imu_accel_x); Serial.print(",");
-    //Serial.print(data.imu_accel_y); Serial.print(",");
-    //Serial.print(data.imu_accel_z); Serial.print(",");
-    //Serial.print(data.imu_gyro_x); Serial.print(",");
-    //Serial.print(data.imu_gyro_y); Serial.print(",");
-    //Serial.print(data.imu_gyro_z); Serial.print(",");
-    //Serial.print(data.flow_x); Serial.print(",");
-    //Serial.print(data.flow_y); Serial.print(",");  
-    //Serial.print(data.lidar_dist); Serial.print(",");
-    //Serial.println(data.lidar_flux);
+    // Serial.print(data.imu_accel_x); Serial.print(",");
+    // Serial.print(data.imu_accel_y); Serial.print(",");
+    // Serial.print(data.imu_accel_z); Serial.print(",");
+    // Serial.print(data.imu_gyro_x); Serial.print(",");
+    // Serial.print(data.imu_gyro_y); Serial.print(",");
+    // Serial.println(data.imu_gyro_z); Serial.print(",");
+    // Serial.print(data.flow_x); Serial.print(",");
+    // Serial.print(data.flow_y); Serial.print(",");  
+    // Serial.println(data.lidar_dist);
 
     Serial.print("\r");  // Return to the beginning of the line
 
@@ -136,44 +147,37 @@ void loop() {
     printFixed(data.flow_y);    
     printFixed(data.lidar_dist);
     printFixed(data.lidar_flux);
-    printFixed(manualControl); // No comma at the end
-    //delay(200);
-    printFixed(MotorControlPWM,1);
-    counter++;
+    //printFixed(manualControl); // No comma at the end
+    // //delay(200);
+    // printFixed(MotorControlPWM,1);
+    // counter++;
 
-    /*
-    updateIMU(data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
-              data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
+    //updateIMU(data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
+    //          data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
 
-    Serial.print("Pitch: ");
-    Serial.print(pitch * RAD_TO_DEG);
-    Serial.print(" Roll: ");
-    Serial.println(roll * RAD_TO_DEG);
-    */
+    //Serial.print("Pitch: ");
+    //Serial.print(pitch * RAD_TO_DEG); Serial.print(","); 
+    //Serial.print(" Roll: ");
+    //Serial.println(roll * RAD_TO_DEG);
 
-    /*
-    Serial.printf(">Ax:");
-    Serial.println(data.imu_accel_x);
-    Serial.printf(">Ay:");
-    Serial.println(data.imu_accel_y);
-    Serial.printf(">Az:");
-    Serial.println(data.imu_accel_z);
-    Serial.printf(">Gx:");
-    Serial.println(data.imu_gyro_x);
-    Serial.printf(">Gy:");
-    Serial.println(data.imu_gyro_y);
-    Serial.printf(">Gz:");
-    Serial.println(data.imu_gyro_z);
-    Serial.printf(">Temp:");
-    Serial.println(data.imu_temp);
-    
-    Serial.printf(">FlowX:");
-    Serial.println(data.flow_x);
-    Serial.printf(">FlowY:");
-    Serial.println(data.flow_y);
-    */
-    //Serial.printf(">LiDAR:");
-    //Serial.println(data.lidar_dist);
+    // Serial.printf(">Ax:");
+    // Serial.println(data.imu_accel_x / 5460) * 9.81;
+    // Serial.printf(">Ay:");
+    // Serial.println(data.imu_accel_y / 5460) * 9.81;
+    // Serial.printf(">Az:");
+    // Serial.println(data.imu_accel_z / 5460) * 9.81;
+    // Serial.printf(">Gx:");
+    // Serial.println((data.imu_gyro_x / 131.072) * M_PI / 180);
+    // Serial.printf(">Gy:");
+    // Serial.println((data.imu_gyro_y / 131.072) * M_PI / 180);
+    // Serial.printf(">Gz:");
+    // Serial.println((data.imu_gyro_z / 131.072) * M_PI / 180);
+    // Serial.printf(">FlowX:");
+    // Serial.println(data.flow_x);
+    // Serial.printf(">FlowY:");
+    // Serial.println(data.flow_y);
+    // Serial.printf(">LiDAR:");
+    // Serial.println(data.lidar_dist);
     //Serial.printf(">Flux:");
     //Serial.println(data.lidar_flux);
     //Serial.printf(">LiDAR Temp:");

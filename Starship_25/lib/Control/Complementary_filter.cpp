@@ -1,5 +1,5 @@
 #include <math.h>
-#include "Sensor_fusion.h"
+#include "Complementary_filter.h"
 
 // Constants
 const float alpha = 0.98f;         // Complementary filter constant
