@@ -58,8 +58,6 @@ void setup() {
     
 }
 
-
-    
 void printFixed(int value, bool end = false) {
     char buffer[7];  // 5 chars + null terminator
     snprintf(buffer, sizeof(buffer), "%5d", value);  // Right-aligned, 5 wide
@@ -77,10 +75,6 @@ void loop() {
         motorsWrite(2,1050);
         //droneControl // Update motors and servos
     }
-    
-    //int pulseWidth = pulseIn(KILL_SWITCH_PIN, HIGH, 250000);  // Read PWM pulse width (max timeout: 2.5ms)
-    //Serial.print("Kill Switch PWM Pulse Width: ");
-    //Serial.println(pulseWidth);
 
     if (emergencyStop) {
         //uint32_t time_change = (micros()-start_time)/1000000;

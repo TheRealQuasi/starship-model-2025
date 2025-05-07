@@ -157,11 +157,18 @@ classdef HelperBox < handle
             ax.PlotBoxAspectRatio = [1.2 1 1];
             
             % Reference frame is NED. 
-            ax.YDir = 'reverse';
-            ax.ZDir = 'reverse';
-            ax.XLabel.String = 'x (North)';
-            ax.YLabel.String = 'y (East)';
-            ax.ZLabel.String = 'z (Down)';
+            %ax.YDir = 'reverse';
+            %ax.ZDir = 'reverse';
+            %ax.XLabel.String = 'x (North)';
+            %ax.YLabel.String = 'y (East)';
+            %ax.ZLabel.String = 'z (Down)';
+
+            % Reference frame is ENU. 
+            ax.YDir = 'normal';
+            ax.ZDir = 'normal';
+            ax.XLabel.String = 'x (East)';
+            ax.YLabel.String = 'y (North)';
+            ax.ZLabel.String = 'z (Up)';
 
             ax.XGrid = 'on';
             ax.XMinorGrid = 'on';
