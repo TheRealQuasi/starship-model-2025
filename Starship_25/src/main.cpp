@@ -33,6 +33,9 @@ volatile bool TestStart = true; // Flag for emergency stop
 volatile bool logging = false; // Flag for logging
 volatile uint32_t temp_times = 0; // counter for logging
 
+const float dt = 0.005f;
+PositionEstimator estimator(dt);
+
 void setup() {
     pinMode(9, INPUT);
     // Initialize serial communication to sensors
@@ -52,6 +55,7 @@ void setup() {
     // Initialize drone control
     droneControl.initialize();
     //droneControl.testComponents();  // Test motors and servos
+    
 }
 
 
@@ -135,30 +139,40 @@ void loop() {
     // Serial.print(data.flow_y); Serial.print(",");  
     // Serial.println(data.lidar_dist);
 
-    Serial.print("\r");  // Return to the beginning of the line
+    // Serial.print("\r");  // Return to the beginning of the line
 
-    printFixed(data.imu_accel_x);
-    printFixed(data.imu_accel_y);
-    printFixed(data.imu_accel_z);
-    printFixed(data.imu_gyro_x);
-    printFixed(data.imu_gyro_y);
-    printFixed(data.imu_gyro_z);
-    printFixed(data.flow_x);    
-    printFixed(data.flow_y);    
-    printFixed(data.lidar_dist);
-    printFixed(data.lidar_flux);
+    // printFixed(data.imu_accel_x);
+    // printFixed(data.imu_accel_y);
+    // printFixed(data.imu_accel_z);
+    // printFixed(data.imu_gyro_x);
+    // printFixed(data.imu_gyro_y);
+    // printFixed(data.imu_gyro_z);
+    // printFixed(data.flow_x);    
+    // printFixed(data.flow_y);    
+    // printFixed(data.lidar_dist);
+    //printFixed(data.lidar_flux);
     //printFixed(manualControl); // No comma at the end
     // //delay(200);
     // printFixed(MotorControlPWM,1);
     // counter++;
 
-    //updateIMU(data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
-    //          data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
+    updateIMU(data.imu_accel_x, data.imu_accel_y, data.imu_accel_z,
+              data.imu_gyro_x, data.imu_gyro_y, data.imu_gyro_z);
 
     //Serial.print("Pitch: ");
-    //Serial.print(pitch * RAD_TO_DEG); Serial.print(","); 
+    Serial.print(pitch); Serial.print(","); // rad/s
     //Serial.print(" Roll: ");
-    //Serial.println(roll * RAD_TO_DEG);
+    Serial.print(roll); Serial.print(","); // rad/s
+
+    // Update estimator
+    estimator.update({data.imu_accel_x, data.imu_accel_y, data.imu_accel_z},
+                     pitch, roll, data.lidar_dist, data.flow_x, data.flow_y);
+    auto pos = estimator.getPosition();
+
+    Serial.print(pos[0]); Serial.print(",");
+    Serial.print(pos[1]); Serial.print(",");
+    Serial.println(pos[2]);
+
 
     // Serial.printf(">Ax:");
     // Serial.println(data.imu_accel_x / 5460) * 9.81;
