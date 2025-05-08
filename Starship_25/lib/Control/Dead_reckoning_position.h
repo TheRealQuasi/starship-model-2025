@@ -21,7 +21,7 @@ private:
     const float g = 9.81f;
 
     // Filter constants
-    float beta = 0.9f;
+    float beta = 0.2f;
     float gamma = 0.8f;
     float alpha_acc = 0.5f;
     float flow_scale = 0.001f;
