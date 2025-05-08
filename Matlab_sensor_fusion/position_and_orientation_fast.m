@@ -7,7 +7,7 @@ acc = data(:,1:3) / 5460 * 9.81;     % m/s²
 gyro = deg2rad(data(:,4:6));         % rad/s
 flow_x = data(:,7);                  % Optical flow in X (pixels)
 flow_y = data(:,8);                  % Optical flow in Y (pixels)
-lidar_z = data(:,9);                 % Lidar in meters
+lidar_z = data(:,9)/100;             % Lidar in meters
 
 % Optical flow scaling
 flow_scale = 0.001;  % meters/pixel (adjust to your setup)
@@ -18,7 +18,7 @@ g = 9.81;
 
 % Filter constants
 alpha = 0.98;
-beta = 0.9;       % IMU vs lidar
+beta = 0.5;       % IMU vs lidar
 gamma = 0.8;      % IMU vs optical flow
 alpha_acc = 0.5;
 
@@ -77,6 +77,7 @@ for i = 2:N
     v_lidar_z = (lidar_z(i) - lidar_z(i-1)) / dt;
     z_vel(i) = beta * v_acc_z + (1 - beta) * v_lidar_z;
     z_pos(i) = z_pos(i-1) + z_vel(i) * dt;
+    z_pos(i) = lidar_z(i);
     if z_pos(i) < 0
         z_pos(i) = 0;
     end
@@ -114,46 +115,71 @@ end
 %xlabel('Time (s)'); ylabel('Z (m)'); title('Z Position');
 
 
-% --- Visualization ---
-prev_x = NaN; prev_y = NaN; prev_z = NaN;
-viewer = HelperOrientationViewer('Title', 'Drone Orientation and Position');
+% --- Orientation viewer ---
+%viewer = HelperOrientationViewer('Title', 'Drone Orientation and Position');
 
-% --- At the top, initialize arrow handles ---
-hX = []; hY = []; hZ = [];
+% --- Setup figure and viewer ---
+figure('Name', 'Drone Orientation and Position', 'NumberTitle', 'off');
+axis equal;
+grid on;
+view(3);
+xlabel('X'); ylabel('Y'); zlabel('Z');
+xlim([-0.1, 0.6]);
+ylim([-0.1, 0.6]);
+zlim([-0.1, 0.5]);
+hold on;
 
-% --- Inside the animation loop ---
-for i = 1:10:N
-    q = quaternion([0, pitch(i), -roll(i)], 'euler', 'ZYX', 'frame');
-    viewer(q);
+% Initialize empty handles
+% Initial rotation matrix
+R0 = eul2rotm([0, -pitch(1), roll(1)], 'ZYX');
 
-    % Delete old arrows if they exist
-    if isgraphics(hX); delete(hX); end
-    if isgraphics(hY); delete(hY); end
-    if isgraphics(hZ); delete(hZ); end
+origin = [x_pos(1), y_pos(1), z_pos(1)];
+L = 0.4;
 
-    % Rotation matrix from body to world (ZYX convention)
+hX = quiver3(origin(1), origin(2), origin(3), R0(1,1)*L, R0(2,1)*L, R0(3,1)*L, 'r', 'LineWidth', 2);
+hY = quiver3(origin(1), origin(2), origin(3), R0(1,2)*L, R0(2,2)*L, R0(3,2)*L, 'g', 'LineWidth', 2);
+hZ = quiver3(origin(1), origin(2), origin(3), R0(1,3)*L, R0(2,3)*L, R0(3,3)*L, 'b', 'LineWidth', 2);
+
+hPath = plot3(NaN, NaN, NaN, '.k', 'MarkerSize', 2);
+
+% Path arrays
+pathX = []; pathY = []; pathZ = [];
+
+for i = 1:5:N
+    % --- Orientation quaternion for the viewer ---
+    %q = quaternion([0, pitch(i), -roll(i)], 'euler', 'ZYX', 'frame');
+    %viewer(q);
+
+    % Rotation matrix for arrows
     R = eul2rotm([0, -pitch(i), roll(i)], 'ZYX');
-
-    % Origin of the quiver arrows (drone's position)
     origin = [x_pos(i), y_pos(i), z_pos(i)];
 
-    % Length of the axis arrows
-    L = 0.05;
+    % Delete and recreate arrows only if handles are invalid
+    if ~isgraphics(hX)
+        hX = quiver3(0,0,0,0,0,0,'r','LineWidth',2);
+    end
+    if ~isgraphics(hY)
+        hY = quiver3(0,0,0,0,0,0,'g','LineWidth',2);
+    end
+    if ~isgraphics(hZ)
+        hZ = quiver3(0,0,0,0,0,0,'b','LineWidth',2);
+    end
 
-    % Plot rotated body axes at current position
-    hX = quiver3(origin(1), origin(2), origin(3), ...
-                 R(1,1)*L, R(2,1)*L, R(3,1)*L, 'r', 'LineWidth', 2);
-    hY = quiver3(origin(1), origin(2), origin(3), ...
-                 R(1,2)*L, R(2,2)*L, R(3,2)*L, 'g', 'LineWidth', 2);
-    hZ = quiver3(origin(1), origin(2), origin(3), ...
-                 R(1,3)*L, R(2,3)*L, R(3,3)*L, 'b', 'LineWidth', 2);
+    % Update arrows
+    set(hX, 'XData', origin(1), 'YData', origin(2), 'ZData', origin(3), ...
+            'UData', R(1,1)*L, 'VData', R(2,1)*L, 'WData', R(3,1)*L);
+    set(hY, 'XData', origin(1), 'YData', origin(2), 'ZData', origin(3), ...
+            'UData', R(1,2)*L, 'VData', R(2,2)*L, 'WData', R(3,2)*L);
+    set(hZ, 'XData', origin(1), 'YData', origin(2), 'ZData', origin(3), ...
+            'UData', R(1,3)*L, 'VData', R(2,3)*L, 'WData', R(3,3)*L);
 
-    % Trace the path with points
-    plot3(x_pos(i), y_pos(i), z_pos(i), 'k.', 'MarkerSize', 1);
-    hold on;
+    % Update path
+    pathX(end+1) = origin(1);
+    pathY(end+1) = origin(2);
+    pathZ(end+1) = origin(3);
+    set(hPath, 'XData', pathX, 'YData', pathY, 'ZData', pathZ);
 
-    xlabel('X'); ylabel('Y'); zlabel('Z');
-    title('3D Position & Orientation');
-    axis equal; grid on; view(3);
-    drawnow;
+    drawnow limitrate;
 end
+
+

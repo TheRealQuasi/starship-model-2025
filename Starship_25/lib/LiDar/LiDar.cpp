@@ -89,7 +89,9 @@ int16_t tfTemp = 0;       // Internal temperature of Lidar sensor chip
 bool LiDAR::getData( int16_t &tfDist, int16_t &tfFlux, int16_t &tfTemp) {
     Wire1.setSDA(PIN_WIRE1_SDA);
     Wire1.setSCL(PIN_WIRE1_SCL);
-    tfmP.getData( tfDist, tfFlux, tfTemp); // Get a frame of data
+    tfmP.getData( tfDist_cm, tfFlux, tfTemp); // Get a frame of data
+    tfDist = tfDist_cm/100;                   // Convert to meters
+
     if( tfmP.status == TFMP_READY)         // If no error...
     {
         /*
