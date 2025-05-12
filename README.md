@@ -14,7 +14,7 @@ The project involves programming a Teensy 4.1 microcontroller using PlatformIO i
 
 1. Install Visual Studio Code.
 2. Install the PlatformIO extension in Visual Studio Code.
-3. Open the `rocket` folder in Visual Studio Code. PlatformIO should automatically detect all necessary files.
+3. Open the `Starship_25` folder in Visual Studio Code. PlatformIO should automatically detect all necessary files.
 
 ## Building and Programming
 
