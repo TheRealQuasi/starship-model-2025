@@ -1,4 +1,4 @@
-# Starship model Project 2024
+# Starship model Project 2025
 
 Modelling and control of an electric reusable rocket
 ----------------------------------------------------
@@ -26,9 +26,8 @@ The project involves programming a Teensy 4.1 microcontroller using PlatformIO i
 
 This project depends on the following libraries:
 
-- `seeed-studio/Grove IMU 9DOF@^1.0.0`
-- `pkourany/MPU6050@^1.0.3`
-- `mbed-syundo0730/I2Cdev@0.0.0+sha.3aa973ebe3e5`
-- `infineon/XENSIV Digital Pressure Sensor@^1.0.0`
+https://github.com/Seeed-Studio/Grove_6Axis_Accelerometer_And_Gyroscope_BMI088.git
+https://github.com/budryerson/TFMini-Plus-I2C
+https://github.com/bitcraze/Bitcraze_PMW3901
 
 Please ensure these libraries are installed with platformIO before building the project. They should however be installed automatically when opening the project.
