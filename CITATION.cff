@@ -1,0 +1,23 @@
+cff-version: 1.0
+message: "If you use this project or its results, please cite it as below."
+title: "Starship Model 2025: Embedded system and Simulation of an Electrically Powered Reusable Rocket Model"
+version: "1.0.0"
+authors:
+  - family-names: Gustafson
+    given-names: Oskar
+  - family-names: Hama Aga
+    given-names: Sava
+  - family-names: Magnusson
+    given-names: Gillis
+  - family-names: Ringström
+    given-names: Eric
+  - family-names: Sandén
+    given-names: Fredrik
+  - family-names: Thurfjell
+    given-names: Sixten
+date-released: 2025-05-12
+identifiers:
+  - type: url
+    value: https://github.com/TheRealQuasi/starship-model-2025
+repository-code: https://github.com/TheRealQuasi/starship-model-2025
+license: CC-BY-4.0
