@@ -4,7 +4,8 @@ data = readmatrix("all_sensor_shake_data.csv");
 
 % Extract and convert units
 acc = data(:,1:3) / 5460 * 9.81;     % m/s²
-gyro = deg2rad(data(:,4:6));         % rad/s
+gyro = deg2rad(data(:,4:6) / 131.072);         % rad/s
+gyro2 = deg2rad(data(:,4:6));
 dt = 0.005;
 N = size(data,1);
 
@@ -19,7 +20,7 @@ alpha = 0.98;
 
 % Initialize
 q = [1, 0, 0, 0];  % Initial quaternion
-beta = 0.04;
+beta = 0.01;
 
 % Initial estimate from accelerometer
 pitch_comp(1) = atan2(acc(1,2), sqrt(acc(1,1)^2 + acc(1,3)^2));
@@ -99,7 +100,7 @@ for i = 2:N
     pitch_comp(i) = alpha * gyro_pitch + (1 - alpha) * acc_pitch;
     roll_comp(i)  = alpha * gyro_roll  + (1 - alpha) * acc_roll;
 
-    [q, pitch_madg(i), roll_madg(i), yaw_madg(i)] = madgwick6DOF(q, gyro(i,:), acc(i,:), beta, dt);
+    [q, pitch_madg(i), roll_madg(i), yaw_madg(i)] = madgwick6DOF(q, gyro2(i,:), acc(i,:), beta, dt);
 end
 
 %fuse = imufilter('SampleRate', 1/dt);

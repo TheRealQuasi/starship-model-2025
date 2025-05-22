@@ -18,7 +18,7 @@ g = 9.81;
 
 % Filter constants
 alpha = 0.98;
-beta = 0.5;       % IMU vs lidar
+beta = 0.1;       % IMU vs lidar
 gamma = 0.8;      % IMU vs optical flow
 alpha_acc = 0.5;
 

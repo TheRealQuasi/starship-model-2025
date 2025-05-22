@@ -23,6 +23,7 @@ public:
 
     void initialize();  // Initialize motors and servos
     void testComponents();  // Run test functions for motors and servos
+    void lqrControl(float state[10]);  // LQR control function
     void manualControl();  // Manual control function
 };
 

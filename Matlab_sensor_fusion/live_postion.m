@@ -97,7 +97,7 @@ while true
         pathZ(end+1) = origin(3);
         set(hPath, 'XData', pathX, 'YData', pathY, 'ZData', pathZ);
 
-        drawnow limitrate;
+        drawnow limitrate nocallbacks;
         %pause(0.01);
 
     catch ME

@@ -3,7 +3,7 @@
 
 // Constants
 const float alpha = 0.98f;         // Complementary filter constant
-const float dt = 0.01f;            // Loop time (s), e.g. 100 Hz sampling
+const float dt = 0.005f;           // Time step (5 ms)
 
 // Orientation state (in radians)
 float roll = 0.0f;

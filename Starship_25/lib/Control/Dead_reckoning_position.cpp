@@ -3,12 +3,27 @@
 
 PositionEstimator::PositionEstimator(float dt_) : dt(dt_) {}
 
+// Converts flow in pixels/frame to velocity in m/s, for both x and y
+void flowToVelocityXY(float flow_x, float flow_y, float heightInMeters, float& vx, float& vy,
+                      float fps, float scalePerMeter) {
+    if (heightInMeters <= 0.01f) {
+        vx = 0.0f;
+        vy = 0.0f;
+        return;
+    }
+
+    float scale = scalePerMeter / heightInMeters;
+    vx = flow_x / scale * fps;
+    vy = flow_y / scale * fps;
+}
+
 void PositionEstimator::update(const std::array<float, 3>& acc,
                                float pitch, float roll,
                                float lidar_z,
                                float flow_x,
                                float flow_y)
 {
+
     // --- Rotation matrices ---
     float cr = cos(roll), sr = sin(roll);
     float cp = cos(pitch), sp = sin(pitch);
@@ -70,11 +85,12 @@ void PositionEstimator::update(const std::array<float, 3>& acc,
     float x_vel_imu = velocity[0] + acc_filtered[0] * dt;
     float y_vel_imu = velocity[1] + acc_filtered[1] * dt;
 
+    // Convert flow_x and flow_y to velocities
     float v_of_x = flow_x * flow_scale / dt;
     float v_of_y = flow_y * flow_scale / dt;
 
-    velocity[0] = gamma * x_vel_imu + (1 - gamma) * v_of_x;
-    velocity[1] = gamma * y_vel_imu + (1 - gamma) * v_of_y;
+    velocity[0] = epsilon * x_vel_imu + (1 - epsilon) * v_of_x;
+    velocity[1] = epsilon * y_vel_imu + (1 - epsilon) * v_of_y;
 
     position[0] += velocity[0] * dt;
     position[1] += velocity[1] * dt;

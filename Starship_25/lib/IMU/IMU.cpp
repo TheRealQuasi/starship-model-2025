@@ -12,7 +12,7 @@ float ax_offset = 0.0f, ay_offset = 0.0f, az_offset = 0.0f;
 float gx_offset = 0.0f, gy_offset = 0.0f, gz_offset = 0.0f;
 
 const float accel_scale = 9.81f / 5460.0f;     // LSB to m/s^2
-const float gyro_scale = (M_PI / 180.0f) / 131.072f; // LSB to rad/s
+const float gyro_scale = (M_PI / 180.0f); // Madgwick perform better without / 131.072f; // LSB to rad/s
 
 BMI088 bmi088( BMI088_ACC_ADDRESS, BMI088_GYRO_ADDRESS );
 

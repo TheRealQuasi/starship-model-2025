@@ -36,6 +36,20 @@ y_pos = zeros(N,1);
 pitch(1) = atan2(acc(1,2), sqrt(acc(1,1)^2 + acc(1,3)^2));
 roll(1)  = atan2(-acc(1,1), acc(1,3));
 
+function velocity = flowToVelocity(flow_px_per_frame, height_m, fps, scale_per_meter)
+    if nargin < 3
+        fps = 121.0;
+    end
+    if nargin < 4
+        scale_per_meter = 21.9; % pixels per meter at 1 meter height
+    end
+
+    % Convert pixel displacement to meters/second
+    scale = scale_per_meter / height_m;
+    velocity = (flow_px_per_frame / scale) * fps;
+end
+
+
 for i = 2:N
     % --- Orientation ---
     acc_roll  = atan2(-acc(i,1), acc(i,3));
@@ -87,8 +101,10 @@ for i = 2:N
     y_vel_imu = y_vel(i-1) + acc_filtered(2) * dt;
 
     % Optical flow velocity (m/s)
-    v_of_x = flow_x(i) * flow_scale / dt;
-    v_of_y = flow_y(i) * flow_scale / dt;
+    v_of_x = flowToVelocity(flow_x(i), lidar_z(i));
+    v_of_y = flowToVelocity(flow_y(i), lidar_z(i));
+    v_of_x = v_of_x * flow_scale / dt; % flow_x * flow_scale
+    v_of_y = v_of_y * flow_scale / dt; % * flow_y * flow_scale
 
     x_vel(i) = gamma * x_vel_imu + (1 - gamma) * v_of_x;
     y_vel(i) = gamma * y_vel_imu + (1 - gamma) * v_of_y;
@@ -124,9 +140,10 @@ axis equal;
 grid on;
 view(3);
 xlabel('X'); ylabel('Y'); zlabel('Z');
-xlim([-0.1, 0.6]);
-ylim([-0.1, 0.6]);
-zlim([-0.1, 0.5]);
+%xlim([-0.1, 0.6]);
+%ylim([-0.1, 0.6]);
+%zlim([-0.1, 0.5]);
+axis auto;
 hold on;
 
 % Initialize empty handles
@@ -180,6 +197,7 @@ for i = 1:5:N
     set(hPath, 'XData', pathX, 'YData', pathY, 'ZData', pathZ);
 
     drawnow limitrate;
+    pause(0.001);
 end
 
 
