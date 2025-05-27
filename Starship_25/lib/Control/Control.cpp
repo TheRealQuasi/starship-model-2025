@@ -30,6 +30,7 @@ const float K[4][10] = {
   { /* row 3 for motor 2 PWM control */ }
 };
 
+// TODO : Replace with actual LQR gain values (NOT WORKING YET)
 void Control::lqrControl(float state[10]) {
     float u[4] = {0, 0, 0, 0};
 
@@ -61,6 +62,11 @@ void Control::manualControl() {
     theata = map(Servo2ControlPWM, 1100, 1950, -30, 30); // Map the angle to the servo range
     setServo2Pos(theata); 
 
-    motorsWrite(1, MotorControlPWM); // Set motor 1 speed
-    motorsWrite(2, MotorControlPWM); // Set motor 2 speed
+    //motorsWrite(1, MotorControlPWM); // Set motor 1 speed
+    //motorsWrite(2, MotorControlPWM); // Set motor 2 speed
+}
+
+void Control::autoControl(float pitch, float yaw) {
+    setServo1Pos(pitch); 
+    setServo2Pos(yaw); 
 }

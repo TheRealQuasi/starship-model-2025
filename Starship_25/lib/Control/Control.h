@@ -25,6 +25,7 @@ public:
     void testComponents();  // Run test functions for motors and servos
     void lqrControl(float state[10]);  // LQR control function
     void manualControl();  // Manual control function
+    void autoControl(float pitch, float yaw);  // Auto control function
 };
 
 #endif
